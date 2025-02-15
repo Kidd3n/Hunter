@@ -33,7 +33,7 @@ programs() {
         sleep 0.1
     fi
     
-    dependencies=(katana uro Gxss kxss gf anew httpx subfinder)
+    dependencies=(katana uro Gxss kxss gf anew httpx subfinder httpx-toolkit)
 
     for program in "${dependencies[@]}"; do
         if ! command -v $program &> /dev/null; then
@@ -47,6 +47,7 @@ programs() {
                 anew) go install github.com/tomnomnom/anew@latest; sudo cp ~/go/bin/anew /bin/ 2>/dev/null ;;
                 httpx) go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest; sudo cp ~/go/bin/httpx /bin/ 2>/dev/null ;;
                 subfinder) go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest; sudo cp ~/go/bin/subfinder /bin/ 2>/dev/null ;;
+                httpx-toolkit) sudo apt install httpx-toolkit -y 2>/dev/null ;;
                 *) echo -e "${redColour}[-]${grayColour} Could not install: $program. Try installing manually." ;;
             esac
         else
@@ -137,8 +138,8 @@ subfinderfun() {
     echo -ne "\n${blueColour}[*]${grayColour} Filtering active subdomains"
     cat "$subdir/subdomains.txt" | httpx-toolkit -ports 80,443,8080,8000,8888 -threads 200 > $subdir/subdomains_live.txt
     echo -ne "\n${redColour}[!]${grayColour} The ${greenColour}subdomains${grayColour} of ${domainsub} have been saved to the respective output files in the 'output' directory:\n"
-    echo -ne "\n${blueColour}[+]${grayColour}${yellowColour}All${grayColour} subdomains: $subdir/subdomains.txt"
-    echo -ne "\n${blueColour}[+]${grayColour}${greenColour}Active${grayColour} subdomains: $subdir/subdomains_live.txt"
+    echo -ne "\n${blueColour}[+]${grayColour}${yellowColour} All${grayColour} subdomains: $subdir/subdomains.txt"
+    echo -ne "\n${blueColour}[+]${grayColour}${greenColour} Active${grayColour} subdomains: $subdir/subdomains_live.txt"
     echo -ne "\n\n${blueColour}[+]${grayColour} Press Enter to continue" && read
 }
 
