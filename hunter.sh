@@ -127,9 +127,16 @@ run_vuln_scan() {
 }
 
 menu() {
-    tput cnorm
-    echo -ne "${yellowColour}[!]${grayColour} Attacks:"
-    echo -e "\n\n[1] Scan End Points"
+    tput cnorm; clear
+    echo -ne "${redColour}"
+    echo -ne "                    _            \n"
+    echo -ne "  /\\  /\\_   _ _ __ | |_ ___ _ __ \n"
+    echo -ne " / /_/ / | | | '_ \\| __/ _ \\ '__|\n"
+    echo -ne "/ __  /| |_| | | | | ||  __/ |   \n"
+    echo -ne "\\/ /_/  \\__,_|_| |_|\\__\\___|_|   \n"
+
+    echo -ne "\n\n${yellowColour}[!]${grayColour} Attacks:"
+    echo -e "\n\n[1] Scan endpoints (XSS, SQLI, LFI, OP)"
     echo -e "[2] Scan URL Wayback Machine"
     echo -e "\n${redColour}[99]${grayColour} Exit"
     echo -ne "\n${blueColour}[?]${grayColour} Attack: " && read option
