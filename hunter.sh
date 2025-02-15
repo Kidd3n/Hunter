@@ -54,14 +54,6 @@ programs() {
         fi
     done
     
-    # Copy binaries to /bin/
-    #sudo cp ~/go/bin/katana /bin/
-    #sudo cp ~/go/bin/Gxss /bin/
-    #sudo cp ~/go/bin/kxss /bin/
-    #sudo cp ~/go/bin/gf /bin/
-    #sudo cp ~/go/bin/anew /bin/
-    #sudo cp ~/go/bin/httpx /bin/
-    #sudo cp ~/.local/bin/uro /bin/
     clear
 }
 
@@ -69,7 +61,7 @@ programs() {
 fetch_wayback_urls() {
     clear; echo -ne "${purpleColour}[?]${endColour}${grayColour} Enter the domain (e.g., example.com): ${endColour}"
     read domain
-    echo "\n{$blueColour}[*]{$grayColour} Fetching all URLs from the Wayback Machine..."
+    echo -e "\n${blueColour}[*]${grayColour} Fetching all URLs from the Wayback Machine..."
     curl -G "https://web.archive.org/cdx/search/cdx" \
       --data-urlencode "url=*.$domain/*" \
       --data-urlencode "collapse=urlkey" \
@@ -77,7 +69,7 @@ fetch_wayback_urls() {
       --data-urlencode "fl=original" \
       -o output/WBall_urls.txt
 
-    echo "\n${blueColour}[*]${grayColour} Fetching URLs with specific file extensions..."
+    echo -e "\n${blueColour}[*]${grayColour} Fetching URLs with specific file extensions..."
     curl "https://web.archive.org/cdx/search/cdx?url=*.$domain/*&collapse=urlkey&output=text&fl=original&filter=original:.*\\.(xls|xml|xlsx|json|pdf|sql|doc|docx|pptx|txt|git|zip|tar\\.gz|tgz|bak|7z|rar|log|cache|secret|db|backup|yml|gz|config|csv|yaml|md|md5|exe|dll|bin|ini|bat|sh|tar|deb|rpm|iso|img|env|apk|msi|dmg|tmp|crt|pem|key|pub|asc)$" \
       -o output/WBfiltered_urls.txt
 
@@ -118,17 +110,17 @@ run_vuln_scan() {
     cat "$output_dir/output.txt" | gf lfi | sed 's/=.*/=/' | sort -u > "$output_dir/lfi_output.txt"
 
     # SQLi
-    echo -e "{$greenColour}[!]${grayColour} Filtering URLs for potential SQLi endpoints..."
+    echo -e "${greenColour}[!]${grayColour} Filtering URLs for potential SQLi endpoints..."
     cat "$output_dir/output.txt" | gf sqli | sed 's/=.*/=/' | sort -u > "$output_dir/sqli_output.txt"
 
     # Remove the intermediate file output/output.txt
     rm "$output_dir/output.txt"
     
     echo -ne "\n${greenColour}[!]${grayColour} Filtered URLs have been saved to the respective output files in the 'output' directory:\n"
-    echo -ne "${greenColour}[+]${grayColour}  XSS: $output_dir/xss_output.txt"
-    echo -ne "${greenColour}[+]${grayColour}  Open Redirect: $output_dir/open_redirect_output.txt"
-    echo -ne "${greenColour}[+]${grayColour}  LFI: $output_dir/lfi_output.txt"
-    echo -ne "${greenColour}[+]${grayColour}  SQLi: $output_dir/sqli_output.txt"
+    echo -ne "\n${greenColour}[+]${grayColour}  XSS: $output_dir/xss_output.txt"
+    echo -ne "\n${greenColour}[+]${grayColour}  Open Redirect: $output_dir/open_redirect_output.txt"
+    echo -ne "\n${greenColour}[+]${grayColour}  LFI: $output_dir/lfi_output.txt"
+    echo -ne "\n${greenColour}[+]${grayColour}  SQLi: $output_dir/sqli_output.txt\n"
     tput cnorm
 }
 
@@ -168,5 +160,3 @@ else
         menu
     done
 fi
-
-
