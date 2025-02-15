@@ -61,6 +61,7 @@ programs() {
     sudo cp ~/go/bin/anew /bin/
     sudo cp ~/go/bin/httpx /bin/
     sudo cp ~/.local/bin/uro /bin/
+    clear
 }
 
 # Function to fetch URLs from Wayback Machine
@@ -73,11 +74,11 @@ fetch_wayback_urls() {
       --data-urlencode "collapse=urlkey" \
       --data-urlencode "output=text" \
       --data-urlencode "fl=original" \
-      -o all_urls.txt
+      -o output/WBall_urls.txt
 
     echo "Fetching URLs with specific file extensions..."
     curl "https://web.archive.org/cdx/search/cdx?url=*.$domain/*&collapse=urlkey&output=text&fl=original&filter=original:.*\\.(xls|xml|xlsx|json|pdf|sql|doc|docx|pptx|txt|git|zip|tar\\.gz|tgz|bak|7z|rar|log|cache|secret|db|backup|yml|gz|config|csv|yaml|md|md5|exe|dll|bin|ini|bat|sh|tar|deb|rpm|iso|img|env|apk|msi|dmg|tmp|crt|pem|key|pub|asc)$" \
-      -o filtered_urls.txt
+      -o output/WBfiltered_urls.txt
 
     echo "Done! Results saved to:"
     echo "  - all_urls.txt (all URLs)"
@@ -99,6 +100,27 @@ run_vuln_scan() {
 
     echo "Running katana actively with depth 5..."
     katana -u "$website_url" -d 5 -f qurl | uro | anew "$output_dir/output.txt"
+
+    echo "Filtering URLs for potential XSS endpoints..."
+    
+    # XSS
+    cat "$output_dir/output.txt" | Gxss | kxss | grep -oP '^URL: \K\S+' | sed 's/=.*/=/' | sort -u > "$output_dir/xss_output.txt"
+    echo "Extracting final filtered URLs to $output_dir/xss_output.txt..."
+
+    # Open Redirect
+    echo "Filtering URLs for potential Open Redirect endpoints..."
+    cat "$output_dir/output.txt" | gf or | sed 's/=.*/=/' | sort -u > "$output_dir/open_redirect_output.txt"
+
+    # LFI
+    echo "Filtering URLs for potential LFI endpoints..."
+    cat "$output_dir/output.txt" | gf lfi | sed 's/=.*/=/' | sort -u > "$output_dir/lfi_output.txt"
+
+    # SQLi
+    echo "Filtering URLs for potential SQLi endpoints..."
+    cat "$output_dir/output.txt" | gf sqli | sed 's/=.*/=/' | sort -u > "$output_dir/sqli_output.txt"
+
+    # Remove the intermediate file output/output.txt
+    rm "$output_dir/output.txt"
 }
 
 menu() {
