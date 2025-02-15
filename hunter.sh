@@ -46,7 +46,7 @@ programs() {
                 gf) go install github.com/tomnomnom/gf@latest; sudo cp ~/go/bin/gf /bin/ 2>/dev/null ;;
                 anew) go install github.com/tomnomnom/anew@latest; sudo cp ~/go/bin/anew /bin/ 2>/dev/null ;;
                 httpx) go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest; sudo cp ~/go/bin/httpx /bin/ 2>/dev/null ;;
-                subfinder) go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest; sudo cp ~/go/bin/subfinder /bin/ ;;
+                subfinder) go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest; sudo cp ~/go/bin/subfinder /bin/ 2>/dev/null ;;
                 *) echo -e "${redColour}[-]${grayColour} Could not install: $program. Try installing manually." ;;
             esac
         else
@@ -180,7 +180,7 @@ else
     echo -ne " / /_/ / | | | '_ \\| __/ _ \\ '__|\n"
     echo -ne "/ __  /| |_| | | | | ||  __/ |   \n"
     echo -ne "\\/ /_/  \\__,_|_| |_|\\__\\___|_|   \n"
-    echo -e "${greenColour}[+]${grayColour} Version 1"
+    echo -e "\n${greenColour}[+]${grayColour} Version 1"
     echo -e "${greenColour}[+]${grayColour} Github: https://github.com/Kidd3n"
     echo -e "${greenColour}[+]${grayColour} Discord ID: kidd3n.sh"
     echo -ne "\n${greenColour}[+]${grayColour} Press Enter to continue" && read
