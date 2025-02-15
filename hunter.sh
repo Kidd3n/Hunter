@@ -67,15 +67,16 @@ fetch_wayback_urls() {
       --data-urlencode "collapse=urlkey" \
       --data-urlencode "output=text" \
       --data-urlencode "fl=original" \
-      -o output/WBall_urls.txt
+      -o output/all_urls.txt
 
     echo -e "\n${blueColour}[*]${grayColour} Fetching URLs with specific file extensions..."
     curl "https://web.archive.org/cdx/search/cdx?url=*.$domain/*&collapse=urlkey&output=text&fl=original&filter=original:.*\\.(xls|xml|xlsx|json|pdf|sql|doc|docx|pptx|txt|git|zip|tar\\.gz|tgz|bak|7z|rar|log|cache|secret|db|backup|yml|gz|config|csv|yaml|md|md5|exe|dll|bin|ini|bat|sh|tar|deb|rpm|iso|img|env|apk|msi|dmg|tmp|crt|pem|key|pub|asc)$" \
-      -o output/WBfiltered_urls.txt
+      -o output/filtered_urls.txt
 
     echo -ne "${greenColour}[!]${grayColour} Done! Results saved to:"
-    echo -ne "${greenColour}[+]${grayColour}  - all_urls.txt (all URLs)"
-    echo -ne "${greenColour}[+]${grayColour}  - filtered_urls.txt (URLs with specific file extensions)"
+    echo -ne "${greenColour}[+]${grayColour}  output/all_urls.txt (all URLs)"
+    echo -ne "${greenColour}[+]${grayColour}  output/filtered_urls.txt (URLs with specific file extensions)\n"
+    echo -ne "\n${blueColour}[+]${grayColour} Press Enter to continue" && read
 }
 
 # Function to run vulnerability scanning
@@ -121,6 +122,7 @@ run_vuln_scan() {
     echo -ne "\n${greenColour}[+]${grayColour}  Open Redirect: $output_dir/open_redirect_output.txt"
     echo -ne "\n${greenColour}[+]${grayColour}  LFI: $output_dir/lfi_output.txt"
     echo -ne "\n${greenColour}[+]${grayColour}  SQLi: $output_dir/sqli_output.txt\n\n\n"
+    echo -ne "\n${blueColour}[+]${grayColour} Press Enter to continue" && read
     tput cnorm
 }
 
@@ -142,7 +144,7 @@ menu() {
 
 # Check if the tool was run as root
 if [ $(id -u) -ne 0 ]; then
-    echo -e "$redColour\n[!]$grayColour Must be root (sudo $0)\n"
+    echo -e "${redColour}\n[!]${grayColour} Must be root (sudo $0)\n"
     $cleancolor
     exit 1
 # If the tool was run as root, run the update packages, check dependencies and run the main code
