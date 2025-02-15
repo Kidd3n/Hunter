@@ -66,9 +66,9 @@ programs() {
 
 # Function to fetch URLs from Wayback Machine
 fetch_wayback_urls() {
-    echo -ne "${purpleColour}[?]${endColour}${grayColour} Enter the domain (e.g., example.com): ${endColour}"
+    clear; echo -ne "${purpleColour}[?]${endColour}${grayColour} Enter the domain (e.g., example.com): ${endColour}"
     read domain
-    echo "Fetching all URLs from the Wayback Machine..."
+    echo "\n{$blueColour}[*]{$grayColour} Fetching all URLs from the Wayback Machine..."
     curl -G "https://web.archive.org/cdx/search/cdx" \
       --data-urlencode "url=*.$domain/*" \
       --data-urlencode "collapse=urlkey" \
@@ -76,67 +76,67 @@ fetch_wayback_urls() {
       --data-urlencode "fl=original" \
       -o output/WBall_urls.txt
 
-    echo "Fetching URLs with specific file extensions..."
+    echo "\n{$blueColour}[*]{$grayColour} Fetching URLs with specific file extensions..."
     curl "https://web.archive.org/cdx/search/cdx?url=*.$domain/*&collapse=urlkey&output=text&fl=original&filter=original:.*\\.(xls|xml|xlsx|json|pdf|sql|doc|docx|pptx|txt|git|zip|tar\\.gz|tgz|bak|7z|rar|log|cache|secret|db|backup|yml|gz|config|csv|yaml|md|md5|exe|dll|bin|ini|bat|sh|tar|deb|rpm|iso|img|env|apk|msi|dmg|tmp|crt|pem|key|pub|asc)$" \
       -o output/WBfiltered_urls.txt
 
-    echo "Done! Results saved to:"
-    echo "  - all_urls.txt (all URLs)"
-    echo "  - filtered_urls.txt (URLs with specific file extensions)"
+    echo -ne "{$greenColour}[!]{$grayColour} Done! Results saved to:"
+    echo -ne "{$greenColour}[+]{$grayColour}  - all_urls.txt (all URLs)"
+    echo -ne "{$greenColour}[+]{$grayColour}  - filtered_urls.txt (URLs with specific file extensions)"
 }
 
 # Function to run vulnerability scanning
 run_vuln_scan() {
-    echo -ne "${purpleColour}[?]${endColour}${grayColour} Enter the website URL or domain: ${endColour}"
+    clear; echo -ne "${purpleColour}[?]${endColour}${grayColour} Enter the website URL or domain: ${endColour}"
     read website_input
     [[ ! $website_input =~ ^https?:// ]] && website_url="https://$website_input" || website_url="$website_input"
     clear; tput civis
-    echo "Normalized URL being used: $website_url"
+    echo -ne "{$blueColour}[!]{$grayColour} Normalized URL being used: $website_url"
 
     output_dir="output"
     mkdir -p "$output_dir"
 
-    echo "Running katana with passive sources (waybackarchive, commoncrawl, alienvault)..."
+    echo "{$blueColour}[*]{$grayColour} Running katana with passive sources (waybackarchive, commoncrawl, alienvault)..."
     echo "$website_url" | katana -ps -pss waybackarchive,commoncrawl,alienvault -f qurl | uro > "$output_dir/output.txt"
 
-    echo "Running katana actively with depth 5..."
+    echo "{$blueColour}[*]{$grayColour} Running katana actively with depth 5..."
     katana -u "$website_url" -d 5 -f qurl | uro | anew "$output_dir/output.txt"
 
-    echo "Filtering URLs for potential XSS endpoints..."
+    echo "\n{$greenColour}[!]{$grayColour} Filtering URLs for potential XSS endpoints..."; sleep 1
     
     # XSS
     cat "$output_dir/output.txt" | Gxss | kxss | grep -oP '^URL: \K\S+' | sed 's/=.*/=/' | sort -u > "$output_dir/xss_output.txt"
-    echo "Extracting final filtered URLs to $output_dir/xss_output.txt..."
+    echo "{$blueColour}[*]{$grayColour} Extracting final filtered URLs to $output_dir/xss_output.txt..."
 
     # Open Redirect
-    echo "Filtering URLs for potential Open Redirect endpoints..."
+    echo "{$greenColour}[!]{$grayColour} Filtering URLs for potential Open Redirect endpoints..."
     cat "$output_dir/output.txt" | gf or | sed 's/=.*/=/' | sort -u > "$output_dir/open_redirect_output.txt"
 
     # LFI
-    echo "Filtering URLs for potential LFI endpoints..."
+    echo "{$greenColour}[!]{$grayColour} Filtering URLs for potential LFI endpoints..."
     cat "$output_dir/output.txt" | gf lfi | sed 's/=.*/=/' | sort -u > "$output_dir/lfi_output.txt"
 
     # SQLi
-    echo "Filtering URLs for potential SQLi endpoints..."
+    echo "{$greenColour}[!]{$grayColour} Filtering URLs for potential SQLi endpoints..."
     cat "$output_dir/output.txt" | gf sqli | sed 's/=.*/=/' | sort -u > "$output_dir/sqli_output.txt"
 
     # Remove the intermediate file output/output.txt
     rm "$output_dir/output.txt"
     
-    echo "Filtered URLs have been saved to the respective output files in the 'output' directory:"
-    echo "  - XSS: $output_dir/xss_output.txt"
-    echo "  - Open Redirect: $output_dir/open_redirect_output.txt"
-    echo "  - LFI: $output_dir/lfi_output.txt"
-    echo "  - SQLi: $output_dir/sqli_output.txt"
+    echo -ne "\n{$greenColour}[!]{$grayColour} Filtered URLs have been saved to the respective output files in the 'output' directory:\n"
+    echo -ne "{$greenColour}[+]{$grayColour}  XSS: $output_dir/xss_output.txt"
+    echo -ne "{$greenColour}[+]{$grayColour}  Open Redirect: $output_dir/open_redirect_output.txt"
+    echo -ne "{$greenColour}[+]{$grayColour}  LFI: $output_dir/lfi_output.txt"
+    echo -ne "{$greenColour}[+]{$grayColour}  SQLi: $output_dir/sqli_output.txt"
     tput cnorm
 }
 
 menu() {
     tput cnorm
-    echo -e "${yellowColour}[!]{$grayColour}Attacks:\n"
+    echo -ne "${yellowColour}[!]{$grayColour} Attacks:\n"
     echo "[1] Scan End Points"
     echo "[2] Scan URL Wayback Machine"
-    echo "[99] Exit"
+    echo "[99] Exit\n"
     echo -ne "${blueColour}[?]${grayColour} Attack: " && read option
 
     case $option in
