@@ -151,7 +151,7 @@ menu() {
     echo -ne " / /_/ / | | | '_ \\| __/ _ \\ '__|\n"
     echo -ne "/ __  /| |_| | | | | ||  __/ |   \n"
     echo -ne "\\/ /_/  \\__,_|_| |_|\\__\\___|_|   \n"
-    echo -e "\n\n${yellowColour}[1]${grayColour} Scan endpoints (XSS, SQLI, LFI, OP)"
+    echo -e "\n\n${yellowColour}[1]${grayColour} Scan endpoints (XSS, SQLI, LFI, OR)"
     echo -e "${yellowColour}[2]${grayColour} Scan subdomains"
     echo -e "${yellowColour}[3]${grayColour} Scan URL Wayback Machine"
     echo -e "\n${redColour}[99]${grayColour} Exit"
