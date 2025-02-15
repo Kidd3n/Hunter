@@ -134,10 +134,8 @@ menu() {
     echo -ne " / /_/ / | | | '_ \\| __/ _ \\ '__|\n"
     echo -ne "/ __  /| |_| | | | | ||  __/ |   \n"
     echo -ne "\\/ /_/  \\__,_|_| |_|\\__\\___|_|   \n"
-
-    echo -ne "\n\n${yellowColour}[!]${grayColour} Attacks:"
-    echo -e "\n\n[1] Scan endpoints (XSS, SQLI, LFI, OP)"
-    echo -e "[2] Scan URL Wayback Machine"
+    echo -e "\n\n${yellowColour}[1]${grayColour} Scan endpoints (XSS, SQLI, LFI, OP)"
+    echo -e "${yellowColour}[2]${grayColour} Scan URL Wayback Machine"
     echo -e "\n${redColour}[99]${grayColour} Exit"
     echo -ne "\n${blueColour}[?]${grayColour} Attack: " && read option
 
@@ -158,8 +156,13 @@ if [ $(id -u) -ne 0 ]; then
 else
     pathmain=$(pwd)
     tput civis; clear
-    echo -e "${turquoiseColour}"
-    echo -e "${greenColour}[+]${grayColour} Version 1"
+    echo -ne "${redColour}"
+    echo -ne "                    _            \n"
+    echo -ne "  /\\  /\\_   _ _ __ | |_ ___ _ __ \n"
+    echo -ne " / /_/ / | | | '_ \\| __/ _ \\ '__|\n"
+    echo -ne "/ __  /| |_| | | | | ||  __/ |   \n"
+    echo -ne "\\/ /_/  \\__,_|_| |_|\\__\\___|_|   \n"
+    echo -e "$\n\n{greenColour}[+]${grayColour} Version 1"
     echo -e "${greenColour}[+]${grayColour} Github: https://github.com/Kidd3n"
     echo -e "${greenColour}[+]${grayColour} Discord ID: kidd3n.sh"
     echo -ne "\n${greenColour}[+]${grayColour} Press Enter to continue" && read
