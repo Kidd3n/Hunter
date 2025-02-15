@@ -97,7 +97,7 @@ run_vuln_scan() {
     output_dir="output"
     mkdir -p "$output_dir"
 
-    echo -e "${blueColour}[*]${grayColour} Running katana with passive sources (waybackarchive, commoncrawl, alienvault)..."
+    echo -e "\n\n${blueColour}[*]${grayColour} Running katana with passive sources (waybackarchive, commoncrawl, alienvault)..."
     echo "$website_url" | katana -ps -pss waybackarchive,commoncrawl,alienvault -f qurl | uro > "$output_dir/output.txt"
 
     echo -e "${blueColour}[*]${grayColour} Running katana actively with depth 5..."
@@ -135,7 +135,7 @@ run_vuln_scan() {
 menu() {
     tput cnorm
     echo -ne "${yellowColour}[!]${grayColour} Attacks:"
-    echo -e "\n[1] Scan End Points"
+    echo -e "\n\n[1] Scan End Points"
     echo -e "[2] Scan URL Wayback Machine"
     echo -e "\n[99] Exit"
     echo -ne "\n${blueColour}[?]${grayColour} Attack: " && read option
