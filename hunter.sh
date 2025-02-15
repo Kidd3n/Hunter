@@ -121,6 +121,12 @@ run_vuln_scan() {
 
     # Remove the intermediate file output/output.txt
     rm "$output_dir/output.txt"
+    
+    echo "Filtered URLs have been saved to the respective output files in the 'output' directory:"
+    echo "  - XSS: $output_dir/xss_output.txt"
+    echo "  - Open Redirect: $output_dir/open_redirect_output.txt"
+    echo "  - LFI: $output_dir/lfi_output.txt"
+    echo "  - SQLi: $output_dir/sqli_output.txt"
 }
 
 menu() {
