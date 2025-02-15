@@ -15,6 +15,7 @@ trap ctrl_c INT
 
 ctrl_c() {
     echo -e "\n\n${redColour}[!]${endColour}${grayColour} Exit...${endColour}\n"
+    tput cnorm
     exit
 }
 
@@ -87,7 +88,7 @@ fetch_wayback_urls() {
 
 # Function to run vulnerability scanning
 run_vuln_scan() {
-    clear; echo -ne "${purpleColour}[?]${grayColour} Enter the website URL or domain: ${endColour}"
+    clear; echo -ne "${purpleColour}[?]${grayColour} Enter the website URL or domain: "
     read website_input
     [[ ! $website_input =~ ^https?:// ]] && website_url="https://$website_input" || website_url="$website_input"
     clear; tput civis
@@ -96,28 +97,28 @@ run_vuln_scan() {
     output_dir="output"
     mkdir -p "$output_dir"
 
-    echo "${blueColour}[*]${grayColour} Running katana with passive sources (waybackarchive, commoncrawl, alienvault)..."
+    echo -e "${blueColour}[*]${grayColour} Running katana with passive sources (waybackarchive, commoncrawl, alienvault)..."
     echo "$website_url" | katana -ps -pss waybackarchive,commoncrawl,alienvault -f qurl | uro > "$output_dir/output.txt"
 
-    echo "${blueColour}[*]${grayColour} Running katana actively with depth 5..."
+    echo -e "${blueColour}[*]${grayColour} Running katana actively with depth 5..."
     katana -u "$website_url" -d 5 -f qurl | uro | anew "$output_dir/output.txt"
 
-    echo "\n${greenColour}[!]${grayColour} Filtering URLs for potential XSS endpoints..."; sleep 1
+    echo -e "\n${greenColour}[!]${grayColour} Filtering URLs for potential XSS endpoints..."; sleep 1
     
     # XSS
     cat "$output_dir/output.txt" | Gxss | kxss | grep -oP '^URL: \K\S+' | sed 's/=.*/=/' | sort -u > "$output_dir/xss_output.txt"
-    echo "${blueColour}[*]${grayColour} Extracting final filtered URLs to $output_dir/xss_output.txt..."
+    echo -e "${blueColour}[*]${grayColour} Extracting final filtered URLs to $output_dir/xss_output.txt..."
 
     # Open Redirect
-    echo "${greenColour}[!]${grayColour} Filtering URLs for potential Open Redirect endpoints..."
+    echo -e "${greenColour}[!]${grayColour} Filtering URLs for potential Open Redirect endpoints..."
     cat "$output_dir/output.txt" | gf or | sed 's/=.*/=/' | sort -u > "$output_dir/open_redirect_output.txt"
 
     # LFI
-    echo "${greenColour}[!]${grayColour} Filtering URLs for potential LFI endpoints..."
+    echo -e "${greenColour}[!]${grayColour} Filtering URLs for potential LFI endpoints..."
     cat "$output_dir/output.txt" | gf lfi | sed 's/=.*/=/' | sort -u > "$output_dir/lfi_output.txt"
 
     # SQLi
-    echo "{$greenColour}[!]${grayColour} Filtering URLs for potential SQLi endpoints..."
+    echo -e "{$greenColour}[!]${grayColour} Filtering URLs for potential SQLi endpoints..."
     cat "$output_dir/output.txt" | gf sqli | sed 's/=.*/=/' | sort -u > "$output_dir/sqli_output.txt"
 
     # Remove the intermediate file output/output.txt
@@ -133,16 +134,16 @@ run_vuln_scan() {
 
 menu() {
     tput cnorm
-    echo -ne "${yellowColour}[!]${grayColour} Attacks:\n"
-    echo "[1] Scan End Points"
-    echo "[2] Scan URL Wayback Machine"
-    echo "[99] Exit\n"
-    echo -ne "${blueColour}[?]${grayColour} Attack: " && read option
+    echo -ne "${yellowColour}[!]${grayColour} Attacks:"
+    echo -e "\n[1] Scan End Points"
+    echo -e "[2] Scan URL Wayback Machine"
+    echo -e "\n[99] Exit"
+    echo -ne "\n${blueColour}[?]${grayColour} Attack: " && read option
 
     case $option in
         1) run_vuln_scan ;;
         2) fetch_wayback_urls ;;
-        99) exit ;;
+        99) ctrl_c ;;
         *) echo -e "${redColour}Invalid option, try again.${endColour}" ;;
     esac
 }
