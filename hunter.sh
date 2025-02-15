@@ -75,9 +75,9 @@ fetch_wayback_urls() {
     curl "https://web.archive.org/cdx/search/cdx?url=*.$domain/*&collapse=urlkey&output=text&fl=original&filter=original:.*\\.(xls|xml|xlsx|json|pdf|sql|doc|docx|pptx|txt|git|zip|tar\\.gz|tgz|bak|7z|rar|log|cache|secret|db|backup|yml|gz|config|csv|yaml|md|md5|exe|dll|bin|ini|bat|sh|tar|deb|rpm|iso|img|env|apk|msi|dmg|tmp|crt|pem|key|pub|asc)$" \
       -o output/filtered_urls.txt
 
-    echo -ne "${greenColour}[!]${grayColour} Done! Results saved to:"
-    echo -ne "${greenColour}[+]${grayColour}  output/all_urls.txt (all URLs)"
-    echo -ne "${greenColour}[+]${grayColour}  output/filtered_urls.txt (URLs with specific file extensions)\n"
+    echo -ne "\n${greenColour}[!]${grayColour} Done! Results saved to:"
+    echo -ne "\n${greenColour}[+]${grayColour}  output/all_urls.txt (all URLs)"
+    echo -ne "\n${greenColour}[+]${grayColour}  output/filtered_urls.txt (URLs with specific file extensions)\n"
     echo -ne "\n\n${blueColour}[+]${grayColour} Press Enter to continue" && read
 }
 
