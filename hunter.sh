@@ -33,7 +33,7 @@ programs() {
         sleep 0.1
     fi
     
-    dependencies=(katana uro Gxss kxss gf anew httpx)
+    dependencies=(katana uro Gxss kxss gf anew httpx subfinder)
 
     for program in "${dependencies[@]}"; do
         if ! command -v $program &> /dev/null; then
@@ -46,6 +46,7 @@ programs() {
                 gf) go install github.com/tomnomnom/gf@latest; sudo cp ~/go/bin/gf /bin/ 2>/dev/null ;;
                 anew) go install github.com/tomnomnom/anew@latest; sudo cp ~/go/bin/anew /bin/ 2>/dev/null ;;
                 httpx) go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest; sudo cp ~/go/bin/httpx /bin/ 2>/dev/null ;;
+                subfinder) go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest; sudo cp ~/go/bin/subfinder /bin/
                 *) echo -e "${redColour}[-]${grayColour} Could not install: $program. Try installing manually." ;;
             esac
         else
@@ -76,7 +77,7 @@ fetch_wayback_urls() {
     echo -ne "${greenColour}[!]${grayColour} Done! Results saved to:"
     echo -ne "${greenColour}[+]${grayColour}  output/all_urls.txt (all URLs)"
     echo -ne "${greenColour}[+]${grayColour}  output/filtered_urls.txt (URLs with specific file extensions)\n"
-    echo -ne "\n${blueColour}[+]${grayColour} Press Enter to continue" && read
+    echo -ne "\n\n${blueColour}[+]${grayColour} Press Enter to continue" && read
 }
 
 # Function to run vulnerability scanning
@@ -122,8 +123,23 @@ run_vuln_scan() {
     echo -ne "\n${greenColour}[+]${grayColour}  Open Redirect: $output_dir/open_redirect_output.txt"
     echo -ne "\n${greenColour}[+]${grayColour}  LFI: $output_dir/lfi_output.txt"
     echo -ne "\n${greenColour}[+]${grayColour}  SQLi: $output_dir/sqli_output.txt\n\n\n"
-    echo -ne "\n${blueColour}[+]${grayColour} Press Enter to continue" && read
+    echo -ne "\n\n${blueColour}[+]${grayColour} Press Enter to continue" && read
     tput cnorm
+}
+
+subfinderfun() {
+    subdir="subdomains"
+    mkdir -p "$subdir"
+    clear; echo -ne "${purpleColour}[?]${endColour}${grayColour} Enter the domain (e.g., example.com): " && read domainsub
+    sleep 1
+    echo -ne "\n${blueColour}[*]${grayColour} Finding subdomains in $domainsub"
+    subfinder -d $domainsub -all -recursive > $subdir/subdomains.txt
+    echo -ne "\n${blueColour}[*]${grayColour} Filtering active subdomains"
+    cat "$subdir/subdomains.txt" | httpx-toolkit -ports 80,443,8080,8000,8888 -threads 200 > $subdir/subdomains_live.txt
+    echo -ne "\n${redColour}[!]${grayColour} The ${greenColour}subdomains${grayColour} of ${domainsub} have been saved to the respective output files in the 'output' directory:\n"
+    echo -ne "\n${blueColour}[+]${grayColour}${yellowColour}All${grayColour} subdomains: $subdir/subdomains.txt"
+    echo -ne "\n${blueColour}[+]${grayColour}${greenColour}Active${grayColour} subdomains: $subdir/subdomains_live.txt"
+    echo -ne "\n\n${blueColour}[+]${grayColour} Press Enter to continue" && read
 }
 
 menu() {
@@ -135,13 +151,15 @@ menu() {
     echo -ne "/ __  /| |_| | | | | ||  __/ |   \n"
     echo -ne "\\/ /_/  \\__,_|_| |_|\\__\\___|_|   \n"
     echo -e "\n\n${yellowColour}[1]${grayColour} Scan endpoints (XSS, SQLI, LFI, OP)"
-    echo -e "${yellowColour}[2]${grayColour} Scan URL Wayback Machine"
+    echo -e "${yellowColour}[2]${grayColour} Scan subdomains"
+    echo -e "${yellowColour}[3]${grayColour} Scan URL Wayback Machine"
     echo -e "\n${redColour}[99]${grayColour} Exit"
     echo -ne "\n${blueColour}[?]${grayColour} Attack: " && read option
 
     case $option in
         1) run_vuln_scan ;;
-        2) fetch_wayback_urls ;;
+        2) subfinderfun ;;
+        3) fetch_wayback_urls ;;
         99) ctrl_c ;;
         *) echo -e "${redColour}Invalid option, try again.${endColour}" ;;
     esac
@@ -162,7 +180,7 @@ else
     echo -ne " / /_/ / | | | '_ \\| __/ _ \\ '__|\n"
     echo -ne "/ __  /| |_| | | | | ||  __/ |   \n"
     echo -ne "\\/ /_/  \\__,_|_| |_|\\__\\___|_|   \n"
-    echo -e "$\n\n{greenColour}[+]${grayColour} Version 1"
+    echo -e "${greenColour}[+]${grayColour} Version 1"
     echo -e "${greenColour}[+]${grayColour} Github: https://github.com/Kidd3n"
     echo -e "${greenColour}[+]${grayColour} Discord ID: kidd3n.sh"
     echo -ne "\n${greenColour}[+]${grayColour} Press Enter to continue" && read
