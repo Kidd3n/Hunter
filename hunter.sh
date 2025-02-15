@@ -38,13 +38,13 @@ programs() {
         if ! command -v $program &> /dev/null; then
             echo -e "${blueColour}[*]${grayColour} Installing ${program}..."
             case $program in
-                katana) go install github.com/projectdiscovery/katana/cmd/katana@latest 2>/dev/null ;;
-                uro) pipx install uro --force 2>/dev/null ;;
-                Gxss) go install github.com/KathanP19/Gxss@latest 2>/dev/null ;;
-                kxss) go install github.com/Emoe/kxss@latest 2>/dev/null ;;
-                gf) go install github.com/tomnomnom/gf@latest 2>/dev/null ;;
-                anew) go install github.com/tomnomnom/anew@latest 2>/dev/null ;;
-                httpx) go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest 2>/dev/null ;;
+                katana) go install github.com/projectdiscovery/katana/cmd/katana@latest; sudo cp ~/go/bin/katana /bin/ 2>/dev/null ;;
+                uro) pipx install uro --force; sudo cp ~/.local/bin/uro /bin/ 2>/dev/null ;;
+                Gxss) go install github.com/KathanP19/Gxss@latest; sudo cp ~/go/bin/Gxss /bin/ 2>/dev/null ;;
+                kxss) go install github.com/Emoe/kxss@latest; sudo cp ~/go/bin/kxss /bin/ 2>/dev/null ;;
+                gf) go install github.com/tomnomnom/gf@latest; sudo cp ~/go/bin/gf /bin/ 2>/dev/null ;;
+                anew) go install github.com/tomnomnom/anew@latest; sudo cp ~/go/bin/anew /bin/ 2>/dev/null ;;
+                httpx) go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest; sudo cp ~/go/bin/httpx /bin/ 2>/dev/null ;;
                 *) echo -e "${redColour}[-]${grayColour} Could not install: $program. Try installing manually." ;;
             esac
         else
@@ -54,13 +54,13 @@ programs() {
     done
     
     # Copy binaries to /bin/
-    sudo cp ~/go/bin/katana /bin/
-    sudo cp ~/go/bin/Gxss /bin/
-    sudo cp ~/go/bin/kxss /bin/
-    sudo cp ~/go/bin/gf /bin/
-    sudo cp ~/go/bin/anew /bin/
-    sudo cp ~/go/bin/httpx /bin/
-    sudo cp ~/.local/bin/uro /bin/
+    #sudo cp ~/go/bin/katana /bin/
+    #sudo cp ~/go/bin/Gxss /bin/
+    #sudo cp ~/go/bin/kxss /bin/
+    #sudo cp ~/go/bin/gf /bin/
+    #sudo cp ~/go/bin/anew /bin/
+    #sudo cp ~/go/bin/httpx /bin/
+    #sudo cp ~/.local/bin/uro /bin/
     clear
 }
 
@@ -90,6 +90,7 @@ run_vuln_scan() {
     echo -ne "${purpleColour}[?]${endColour}${grayColour} Enter the website URL or domain: ${endColour}"
     read website_input
     [[ ! $website_input =~ ^https?:// ]] && website_url="https://$website_input" || website_url="$website_input"
+    clear; tput civis
     echo "Normalized URL being used: $website_url"
 
     output_dir="output"
@@ -127,21 +128,21 @@ run_vuln_scan() {
     echo "  - Open Redirect: $output_dir/open_redirect_output.txt"
     echo "  - LFI: $output_dir/lfi_output.txt"
     echo "  - SQLi: $output_dir/sqli_output.txt"
+    tput cnorm
 }
 
 menu() {
     tput cnorm
-    echo -e "${blueColour}\nSelect an option:${endColour}"
-    echo "1) Vulnerability scan"
-    echo "2) Fetch URLs from Wayback Machine"
-    echo "3) Exit"
-    echo -ne "${purpleColour}[?]${endColour}${grayColour} Option: ${endColour}"
-    read option
+    echo -e "${yellowColour}[!]{$grayColour}Attacks:\n"
+    echo "[1] Scan End Points"
+    echo "[2] Scan URL Wayback Machine"
+    echo "[99] Exit"
+    echo -ne "${blueColour}[?]${grayColour} Attack: " && read option
 
     case $option in
         1) run_vuln_scan ;;
         2) fetch_wayback_urls ;;
-        3) exit ;;
+        99) exit ;;
         *) echo -e "${redColour}Invalid option, try again.${endColour}" ;;
     esac
 }
@@ -156,7 +157,7 @@ else
     pathmain=$(pwd)
     tput civis; clear
     echo -e "${turquoiseColour}"
-    echo -e "\n${greenColour}[+]${grayColour} Version 1"
+    echo -e "${greenColour}[+]${grayColour} Version 1"
     echo -e "${greenColour}[+]${grayColour} Github: https://github.com/Kidd3n"
     echo -e "${greenColour}[+]${grayColour} Discord ID: kidd3n.sh"
     echo -ne "\n${greenColour}[+]${grayColour} Press Enter to continue" && read
