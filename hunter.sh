@@ -116,11 +116,11 @@ run_vuln_scan() {
     # Remove the intermediate file output/output.txt
     rm "$output_dir/output.txt"
     
-    echo -ne "\n${greenColour}[!]${grayColour} Filtered URLs have been saved to the respective output files in the 'output' directory:\n"
+    echo -ne "\n${redColour}[!]${grayColour} Filtered URLs have been saved to the respective output files in the 'output' directory:\n"
     echo -ne "\n${greenColour}[+]${grayColour}  XSS: $output_dir/xss_output.txt"
     echo -ne "\n${greenColour}[+]${grayColour}  Open Redirect: $output_dir/open_redirect_output.txt"
     echo -ne "\n${greenColour}[+]${grayColour}  LFI: $output_dir/lfi_output.txt"
-    echo -ne "\n${greenColour}[+]${grayColour}  SQLi: $output_dir/sqli_output.txt\n"
+    echo -ne "\n${greenColour}[+]${grayColour}  SQLi: $output_dir/sqli_output.txt\n\n\n"
     tput cnorm
 }
 
@@ -129,7 +129,7 @@ menu() {
     echo -ne "${yellowColour}[!]${grayColour} Attacks:"
     echo -e "\n\n[1] Scan End Points"
     echo -e "[2] Scan URL Wayback Machine"
-    echo -e "\n[99] Exit"
+    echo -e "\n${redColour}[99]${grayColour} Exit"
     echo -ne "\n${blueColour}[?]${grayColour} Attack: " && read option
 
     case $option in
