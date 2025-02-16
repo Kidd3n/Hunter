@@ -33,7 +33,7 @@ programs() {
         sleep 0.1
     fi
     
-    dependencies=(katana uro Gxss kxss gf anew httpx subfinder httpx-toolkit)
+    dependencies=(katana uro Gxss kxss gf anew httpx subfinder httpx-toolkit nuclei)
 
     for program in "${dependencies[@]}"; do
         if ! command -v $program &> /dev/null; then
@@ -48,6 +48,7 @@ programs() {
                 httpx) go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest; sudo cp ~/go/bin/httpx /bin/ 2>/dev/null ;;
                 subfinder) go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest; sudo cp ~/go/bin/subfinder /bin/ 2>/dev/null ;;
                 httpx-toolkit) sudo apt install httpx-toolkit -y 2>/dev/null ;;
+                nuclei) go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest; sudo cp ~/go/bin/nuclei /bin/ 2>/dev/null ;;
                 *) echo -e "${redColour}[-]${grayColour} Could not install: $program. Try installing manually." ;;
             esac
         else
@@ -96,12 +97,11 @@ fetch_wayback_urls() {
 run_vuln_scan() {
     clear; echo -ne "${purpleColour}[?]${grayColour} Enter the website URL or domain: "
     read website_input
+    output_dir="output_${website_input}"
+    mkdir -p "$output_dir"
     [[ ! $website_input =~ ^https?:// ]] && website_url="https://$website_input" || website_url="$website_input"
     clear; tput civis
     echo -ne "${blueColour}[!]${grayColour} Normalized URL being used: $website_url"
-
-    output_dir="output_${website_input}"
-    mkdir -p "$output_dir"
 
     echo -e "\n\n${blueColour}[*]${grayColour} Running katana with passive sources (waybackarchive, commoncrawl, alienvault)..."
     echo "$website_url" | katana -ps -pss waybackarchive,commoncrawl,alienvault -f qurl | uro > "$output_dir/output.txt"
@@ -161,7 +161,7 @@ subfinderfun() {
     subfinder -d "$domainsub" -all -recursive > "$subdir/subdomains.txt"
 
     echo -ne "\n${blueColour}[*]${grayColour} Filtering active subdomains..."
-    cat "$subdir/subdomains.txt" | httpx-toolkit -ports 80,443,8080,8000,8888 -threads 200 > "$subdir/subdomains_live.txt"
+    cat "$subdir/subdomains.txt" | httpx-toolkit -ports 80,443,8080,8000,8888 -threads 200 > "$subdir/active_subdomains.txt"
 
     echo -e "\n${redColour}[!]${grayColour} Subdomain results for ${domainsub}:"
 
@@ -171,8 +171,8 @@ subfinderfun() {
         echo -ne "\n${redColour}[!]${grayColour} No subdomains found."
     fi
 
-    if [[ -s "$subdir/subdomains_live.txt" ]]; then
-        echo -ne "\n${blueColour}[+]${grayColour}${greenColour} Active${grayColour} subdomains: $subdir/subdomains_live.txt"
+    if [[ -s "$subdir/active_subdomains.txt" ]]; then
+        echo -ne "\n${blueColour}[+]${grayColour}${greenColour} Active${grayColour} subdomains: $subdir/active_subdomains.txt"
     else
         echo -ne "\n${redColour}[!]${grayColour} No active subdomains found."
         sudo rm -rf $subdir
