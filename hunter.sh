@@ -33,22 +33,23 @@ programs() {
         sleep 0.1
     fi
     
-    dependencies=(katana uro Gxss kxss gf anew httpx subfinder httpx-toolkit nuclei)
+    dependencies=(katana uro Gxss kxss gf anew httpx subfinder httpx-toolkit nuclei subzy)
 
     for program in "${dependencies[@]}"; do
         if ! command -v $program &> /dev/null; then
             echo -e "${blueColour}[*]${grayColour} Installing ${program}..."
             case $program in
-                katana) go install github.com/projectdiscovery/katana/cmd/katana@latest; sudo cp ~/go/bin/katana /bin/ 2>/dev/null ;;
-                uro) pipx install uro --force; sudo cp ~/.local/bin/uro /bin/ 2>/dev/null ;;
-                Gxss) go install github.com/KathanP19/Gxss@latest; sudo cp ~/go/bin/Gxss /bin/ 2>/dev/null ;;
-                kxss) go install github.com/Emoe/kxss@latest; sudo cp ~/go/bin/kxss /bin/ 2>/dev/null ;;
-                gf) go install github.com/tomnomnom/gf@latest; sudo cp ~/go/bin/gf /bin/ 2>/dev/null ;;
-                anew) go install github.com/tomnomnom/anew@latest; sudo cp ~/go/bin/anew /bin/ 2>/dev/null ;;
-                httpx) go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest; sudo cp ~/go/bin/httpx /bin/ 2>/dev/null ;;
-                subfinder) go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest; sudo cp ~/go/bin/subfinder /bin/ 2>/dev/null ;;
-                httpx-toolkit) sudo apt install httpx-toolkit -y 2>/dev/null ;;
-                nuclei) go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest; sudo cp ~/go/bin/nuclei /bin/ 2>/dev/null ;;
+                katana) go install github.com/projectdiscovery/katana/cmd/katana@latest 2>/dev/null; sudo cp ~/go/bin/katana /bin/ ;;
+                uro) pipx install uro --force 2>/dev/null; sudo cp ~/.local/bin/uro /bin/ ;;
+                Gxss) go install github.com/KathanP19/Gxss@latest 2>/dev/null; sudo cp ~/go/bin/Gxss /bin/ ;;
+                kxss) go install github.com/Emoe/kxss@latest 2>/dev/null; sudo cp ~/go/bin/kxss /bin/ ;;
+                gf) go install github.com/tomnomnom/gf@latest 2>/dev/null; sudo cp ~/go/bin/gf /bin/ ;;
+                anew) go install github.com/tomnomnom/anew@latest 2>/dev/null; sudo cp ~/go/bin/anew /bin/ ;;
+                httpx) go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest 2>/dev/null; sudo cp ~/go/bin/httpx /bin/ ;;
+                subfinder) go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest 2>/dev/null; sudo cp ~/go/bin/subfinder /bin/ ;;
+                httpx-toolkit) sudo apt install httpx-toolkit -y ;;
+                nuclei) go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest 2>/dev/null; sudo cp ~/go/bin/nuclei /bin/ ;;
+                subzy) go install -v github.com/PentestPad/subzy@latest 2>/dev/null; sudo cp ~/go/bin/subzy /bin/ ;;
                 *) echo -e "${redColour}[-]${grayColour} Could not install: $program. Try installing manually." ;;
             esac
         else
