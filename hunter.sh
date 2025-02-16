@@ -69,16 +69,23 @@ fetch_wayback_urls() {
       --data-urlencode "collapse=urlkey" \
       --data-urlencode "output=text" \
       --data-urlencode "fl=original" \
-      -o output/all_urls.txt
+      -o output_${domain}/all_urls.txt
+
 
     echo -e "\n${blueColour}[*]${grayColour} Fetching URLs with specific file extensions..."
     curl "https://web.archive.org/cdx/search/cdx?url=*.$domain/*&collapse=urlkey&output=text&fl=original&filter=original:.*\\.(xls|xml|xlsx|json|pdf|sql|doc|docx|pptx|txt|git|zip|tar\\.gz|tgz|bak|7z|rar|log|cache|secret|db|backup|yml|gz|config|csv|yaml|md|md5|exe|dll|bin|ini|bat|sh|tar|deb|rpm|iso|img|env|apk|msi|dmg|tmp|crt|pem|key|pub|asc)$" \
-      -o output/filtered_urls.txt
+      -o output_${domain}/filtered_urls.txt
 
-    echo -ne "\n${greenColour}[!]${grayColour} Done! Results saved to:"
-    echo -ne "\n${greenColour}[+]${grayColour}  output/all_urls.txt (all URLs)"
-    echo -ne "\n${greenColour}[+]${grayColour}  output/filtered_urls.txt (URLs with specific file extensions)\n"
-    echo -ne "\n\n${blueColour}[+]${grayColour} Press Enter to continue" && read
+    [[ ! -s output_${domain}/all_urls.txt ]] && rm output/all_urls.txt
+    [[ ! -s output_${domain}/filtered_urls.txt ]] && rm output/filtered_urls.txt
+
+    if [[ -s output_${domain}/all_urls.txt || -s output_${domain}/filtered_urls.txt ]]; then
+        echo -e "\n${greenColour}[*]${grayColour} Results saved to:"
+        [[ -s output_${domain}/all_urls.txt ]] && echo -ne "\n${greenColour}[+]${grayColour}  output_${domain}/all_urls.txt (all URLs)"
+        [[ -s output_${domain}/filtered_urls.txt ]] && echo -ne "\n${greenColour}[+]${grayColour}  output_${domain}/filtered_urls.txt (URLs with specific file extensions)"
+    else
+        echo -e "\n${redColour}[!]${grayColour} No results found. No URLs were extracted."
+    fi
 }
 
 # Function to run vulnerability scanning
@@ -89,7 +96,7 @@ run_vuln_scan() {
     clear; tput civis
     echo -ne "${blueColour}[!]${grayColour} Normalized URL being used: $website_url"
 
-    output_dir="output"
+    output_dir="output_${website_input}"
     mkdir -p "$output_dir"
 
     echo -e "\n\n${blueColour}[*]${grayColour} Running katana with passive sources (waybackarchive, commoncrawl, alienvault)..."
@@ -101,45 +108,69 @@ run_vuln_scan() {
     echo -e "\n${greenColour}[!]${grayColour} Filtering URLs for potential XSS endpoints..."; sleep 1
     
     # XSS
-    cat "$output_dir/output.txt" | Gxss | kxss | grep -oP '^URL: \K\S+' | sed 's/=.*/=/' | sort -u > "$output_dir/xss_output.txt"
-    echo -e "${blueColour}[*]${grayColour} Extracting final filtered URLs to $output_dir/xss_output.txt..."
+    xss_file="$output_dir/xss_output.txt"
+    cat "$output_dir/output.txt" | Gxss | kxss | grep -oP '^URL: \K\S+' | sed 's/=.*/=/' | sort -u > "$xss_file"
+    [[ ! -s "$xss_file" ]] && rm "$xss_file"
 
     # Open Redirect
-    echo -e "${greenColour}[!]${grayColour} Filtering URLs for potential Open Redirect endpoints..."
-    cat "$output_dir/output.txt" | gf or | sed 's/=.*/=/' | sort -u > "$output_dir/open_redirect_output.txt"
+    or_file="$output_dir/open_redirect_output.txt"
+    cat "$output_dir/output.txt" | gf or | sed 's/=.*/=/' | sort -u > "$or_file"
+    [[ ! -s "$or_file" ]] && rm "$or_file"
 
     # LFI
-    echo -e "${greenColour}[!]${grayColour} Filtering URLs for potential LFI endpoints..."
-    cat "$output_dir/output.txt" | gf lfi | sed 's/=.*/=/' | sort -u > "$output_dir/lfi_output.txt"
+    lfi_file="$output_dir/lfi_output.txt"
+    cat "$output_dir/output.txt" | gf lfi | sed 's/=.*/=/' | sort -u > "$lfi_file"
+    [[ ! -s "$lfi_file" ]] && rm "$lfi_file"
 
     # SQLi
-    echo -e "${greenColour}[!]${grayColour} Filtering URLs for potential SQLi endpoints..."
-    cat "$output_dir/output.txt" | gf sqli | sed 's/=.*/=/' | sort -u > "$output_dir/sqli_output.txt"
+    sqli_file="$output_dir/sqli_output.txt"
+    cat "$output_dir/output.txt" | gf sqli | sed 's/=.*/=/' | sort -u > "$sqli_file"
+    [[ ! -s "$sqli_file" ]] && rm "$sqli_file"
 
-    # Remove the intermediate file output/output.txt
+    # Remove the intermediate file output.txt
     rm "$output_dir/output.txt"
     
-    echo -ne "\n${redColour}[!]${grayColour} Filtered URLs have been saved to the respective output files in the 'output' directory:\n"
-    echo -ne "\n${greenColour}[+]${grayColour}  XSS: $output_dir/xss_output.txt"
-    echo -ne "\n${greenColour}[+]${grayColour}  Open Redirect: $output_dir/open_redirect_output.txt"
-    echo -ne "\n${greenColour}[+]${grayColour}  LFI: $output_dir/lfi_output.txt"
-    echo -ne "\n${greenColour}[+]${grayColour}  SQLi: $output_dir/sqli_output.txt\n\n\n"
+    echo -ne "\n${redColour}[!]${grayColour} Filtered URLs have been saved to the respective output files in '$output_dir':\n"
+
+    if [[ -s "$xss_file" || -s "$or_file" || -s "$lfi_file" || -s "$sqli_file" ]]; then
+        [[ -s "$xss_file" ]] && echo -ne "\n${greenColour}[+]${grayColour}  XSS: $xss_file"
+        [[ -s "$or_file" ]] && echo -ne "\n${greenColour}[+]${grayColour}  Open Redirect: $or_file"
+        [[ -s "$lfi_file" ]] && echo -ne "\n${greenColour}[+]${grayColour}  LFI: $lfi_file"
+        [[ -s "$sqli_file" ]] && echo -ne "\n${greenColour}[+]${grayColour}  SQLi: $sqli_file"
+    else
+        echo -ne "\n${redColour}[!]${grayColour} No filtered URLs found. No vulnerabilities detected."
+    fi
     echo -ne "\n\n${blueColour}[+]${grayColour} Press Enter to continue" && read
     tput cnorm
 }
 
 subfinderfun() {
-    subdir="subdomains"
+    clear
+    echo -ne "${purpleColour}[?]${endColour}${grayColour} Enter the domain (e.g., example.com): " && read domainsub
+    subdir="subdomains_${domainsub}"
     mkdir -p "$subdir"
-    clear; echo -ne "${purpleColour}[?]${endColour}${grayColour} Enter the domain (e.g., example.com): " && read domainsub
     sleep 1
-    echo -ne "\n${blueColour}[*]${grayColour} Finding subdomains in $domainsub"
-    subfinder -d $domainsub -all -recursive > $subdir/subdomains.txt
-    echo -ne "\n${blueColour}[*]${grayColour} Filtering active subdomains"
-    cat "$subdir/subdomains.txt" | httpx-toolkit -ports 80,443,8080,8000,8888 -threads 200 > $subdir/subdomains_live.txt
-    echo -ne "\n${redColour}[!]${grayColour} The ${greenColour}subdomains${grayColour} of ${domainsub} have been saved to the respective output files in the 'output' directory:\n"
-    echo -ne "\n${blueColour}[+]${grayColour}${yellowColour} All${grayColour} subdomains: $subdir/subdomains.txt"
-    echo -ne "\n${blueColour}[+]${grayColour}${greenColour} Active${grayColour} subdomains: $subdir/subdomains_live.txt"
+
+    echo -ne "\n${blueColour}[*]${grayColour} Finding subdomains in $domainsub..."
+    subfinder -d "$domainsub" -all -recursive > "$subdir/subdomains.txt"
+
+    echo -ne "\n${blueColour}[*]${grayColour} Filtering active subdomains..."
+    cat "$subdir/subdomains.txt" | httpx-toolkit -ports 80,443,8080,8000,8888 -threads 200 > "$subdir/subdomains_live.txt"
+
+    echo -e "\n${redColour}[!]${grayColour} Subdomain results for ${domainsub}:"
+
+    if [[ -s "$subdir/subdomains.txt" ]]; then
+        echo -ne "\n${blueColour}[+]${grayColour}${yellowColour} All${grayColour} subdomains: $subdir/subdomains.txt"
+    else
+        echo -ne "\n${redColour}[!]${grayColour} No subdomains found."
+    fi
+
+    if [[ -s "$subdir/subdomains_live.txt" ]]; then
+        echo -ne "\n${blueColour}[+]${grayColour}${greenColour} Active${grayColour} subdomains: $subdir/subdomains_live.txt"
+    else
+        echo -ne "\n${redColour}[!]${grayColour} No active subdomains found."
+    fi
+
     echo -ne "\n\n${blueColour}[+]${grayColour} Press Enter to continue" && read
 }
 
