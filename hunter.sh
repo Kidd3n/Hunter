@@ -63,6 +63,7 @@ programs() {
 fetch_wayback_urls() {
     clear; echo -ne "${purpleColour}[?]${endColour}${grayColour} Enter the domain (e.g., example.com): ${endColour}"
     read domain
+    clear; tput civis
     echo -e "\n${blueColour}[*]${grayColour} Fetching all URLs from the Wayback Machine..."
     curl -G "https://web.archive.org/cdx/search/cdx" \
       --data-urlencode "url=*.$domain/*" \
@@ -85,7 +86,10 @@ fetch_wayback_urls() {
         [[ -s output_${domain}/filtered_urls.txt ]] && echo -ne "\n${greenColour}[+]${grayColour}  output_${domain}/filtered_urls.txt (URLs with specific file extensions)"
     else
         echo -e "\n${redColour}[!]${grayColour} No results found. No URLs were extracted."
+        sudo rm -rf output_${domain}
     fi
+    echo -ne "\n\n${blueColour}[+]${grayColour} Press Enter to continue" && read
+    tput cnorm
 }
 
 # Function to run vulnerability scanning
@@ -139,6 +143,7 @@ run_vuln_scan() {
         [[ -s "$sqli_file" ]] && echo -ne "\n${greenColour}[+]${grayColour}  SQLi: $sqli_file"
     else
         echo -ne "\n${redColour}[!]${grayColour} No filtered URLs found. No vulnerabilities detected."
+        sudo rm -rf $output_dir
     fi
     echo -ne "\n\n${blueColour}[+]${grayColour} Press Enter to continue" && read
     tput cnorm
@@ -147,6 +152,7 @@ run_vuln_scan() {
 subfinderfun() {
     clear
     echo -ne "${purpleColour}[?]${endColour}${grayColour} Enter the domain (e.g., example.com): " && read domainsub
+    clear; tput civis
     subdir="subdomains_${domainsub}"
     mkdir -p "$subdir"
     sleep 1
@@ -169,9 +175,10 @@ subfinderfun() {
         echo -ne "\n${blueColour}[+]${grayColour}${greenColour} Active${grayColour} subdomains: $subdir/subdomains_live.txt"
     else
         echo -ne "\n${redColour}[!]${grayColour} No active subdomains found."
+        sudo rm -rf $subdir
     fi
-
     echo -ne "\n\n${blueColour}[+]${grayColour} Press Enter to continue" && read
+    tput cnorm
 }
 
 menu() {
