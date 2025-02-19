@@ -15,6 +15,7 @@ trap ctrl_c INT
 
 ctrl_c() {
     echo -e "\n\n${redColour}[!]${endColour}${grayColour} Exit...${endColour}\n"
+    sudo rm -rf output_https:
     tput cnorm
     exit
 }
@@ -182,6 +183,12 @@ subfinderfun() {
     tput cnorm
 }
 
+takeoversubfun() {
+    wget https://raw.githubusercontent.com/coffinxp/nuclei-templates/refs/heads/main/detect-all-takeovers.yaml
+    subzy run --targets 
+    nuclei -t -l 
+}
+
 menu() {
     tput cnorm; clear
     echo -ne "${redColour}"
@@ -200,6 +207,7 @@ menu() {
         1) run_vuln_scan ;;
         2) subfinderfun ;;
         3) fetch_wayback_urls ;;
+        87) takeoversubfun ;; #BETA
         99) ctrl_c ;;
         *) echo -e "${redColour}Invalid option, try again.${endColour}" ;;
     esac
