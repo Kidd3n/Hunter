@@ -183,10 +183,28 @@ subfinderfun() {
     tput cnorm
 }
 
+checktemp() {
+    pathtemp=$(find / -type f -name "detect-all-takeovers.yaml" -print -quit 2>/dev/null)
+    if [[ -n "$pathtemp" ]]; then
+        echo -ne "\n${blueColour}[*]${grayColour} Find takeovers with nuclei..."
+        nuclei -t $pathtemp -l $pathsubact
+        echo -ne "\n\n${blueColour}[+]${grayColour} Press Enter to continue" && read
+        tput cnorm
+    else
+        echo -ne "\n${greenColour}[+]${grayColour} Downloading the nuclei template."
+        wget https://raw.githubusercontent.com/coffinxp/nuclei-templates/refs/heads/main/detect-all-takeovers.yaml 2>/dev/null
+        checktemp
+    fi
+}
+
 takeoversubfun() {
-    wget https://raw.githubusercontent.com/coffinxp/nuclei-templates/refs/heads/main/detect-all-takeovers.yaml
-    subzy run --targets 
-    nuclei -t -l 
+    clear
+    echo -ne "${purpleColour}[?]${endColour}${grayColour} Enter the path to the file with the active subdomains: " && read pathsubact
+    subzy run --targets $pathsubact --concurrency 100 --hide_fails --verify_ssl 
+    checktemp
+    echo -ne "\n\n${blueColour}[+]${grayColour} Press Enter to continue" && read
+    tput cnorm
+
 }
 
 menu() {
@@ -200,6 +218,7 @@ menu() {
     echo -e "\n\n${yellowColour}[1]${grayColour} Scan endpoints (XSS, SQLI, LFI, OR)"
     echo -e "${yellowColour}[2]${grayColour} Scan subdomains"
     echo -e "${yellowColour}[3]${grayColour} Scan URL Wayback Machine"
+    echo -e "${yellowColour}[4]${grayColour} Scan Takeovers"
     echo -e "\n${redColour}[99]${grayColour} Exit"
     echo -ne "\n${blueColour}[?]${grayColour} Attack: " && read option
 
@@ -207,7 +226,7 @@ menu() {
         1) run_vuln_scan ;;
         2) subfinderfun ;;
         3) fetch_wayback_urls ;;
-        87) takeoversubfun ;; #BETA
+        4) takeoversubfun ;; 
         99) ctrl_c ;;
         *) echo -e "${redColour}Invalid option, try again.${endColour}" ;;
     esac
