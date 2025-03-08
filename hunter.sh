@@ -23,7 +23,7 @@ ctrl_c() {
 # Function to check and install Go
 programs() {
     echo -e "\n${blueColour}[*]${grayColour} Checking dependencies...\n"
-    sleep 0.3
+    sleep 0.2
     
     # Check and install Go
     if ! command -v go &> /dev/null; then
@@ -111,31 +111,35 @@ run_vuln_scan() {
     echo -e "${blueColour}[*]${grayColour} Running katana actively with depth 5..."
     katana -u "$website_url" -d 5 -f qurl | uro | anew "$output_dir/output.txt"
 
+    katana_file="$output_dir/output.txt"
+
+    if [[ ! -s "$katana_file" ]]; then
+        rm "$katana_file"
+        echo -e "\n${redColour}[!]${grayColour} No URLs were collected. Exiting..."
+    fi
+
     echo -e "\n${greenColour}[!]${grayColour} Filtering URLs for potential XSS endpoints..."; sleep 1
-    
+
     # XSS
     xss_file="$output_dir/xss_output.txt"
     cat "$output_dir/output.txt" | Gxss | kxss | grep -oP '^URL: \K\S+' | sed 's/=.*/=/' | sort -u > "$xss_file"
-    [[ ! -s "$xss_file" ]] && rm "$xss_file"
 
     # Open Redirect
     or_file="$output_dir/open_redirect_output.txt"
     cat "$output_dir/output.txt" | gf or | sed 's/=.*/=/' | sort -u > "$or_file"
-    [[ ! -s "$or_file" ]] && rm "$or_file"
 
     # LFI
     lfi_file="$output_dir/lfi_output.txt"
     cat "$output_dir/output.txt" | gf lfi | sed 's/=.*/=/' | sort -u > "$lfi_file"
-    [[ ! -s "$lfi_file" ]] && rm "$lfi_file"
 
     # SQLi
     sqli_file="$output_dir/sqli_output.txt"
     cat "$output_dir/output.txt" | gf sqli | sed 's/=.*/=/' | sort -u > "$sqli_file"
-    [[ ! -s "$sqli_file" ]] && rm "$sqli_file"
 
-    # Remove the intermediate file output.txt
-    rm "$output_dir/output.txt"
-    
+    for file in "$xss_file" "$or_file" "$lfi_file" "$sqli_file"; do
+        [[ ! -s "$file" ]] && rm "$file"
+    done
+
     echo -ne "\n${redColour}[!]${grayColour} Filtered URLs have been saved to the respective output files in '$output_dir':\n"
 
     if [[ -s "$xss_file" || -s "$or_file" || -s "$lfi_file" || -s "$sqli_file" ]]; then
@@ -145,8 +149,8 @@ run_vuln_scan() {
         [[ -s "$sqli_file" ]] && echo -ne "\n${greenColour}[+]${grayColour}  SQLi: $sqli_file"
     else
         echo -ne "\n${redColour}[!]${grayColour} No filtered URLs found. No vulnerabilities detected."
-        sudo rm -rf $output_dir
     fi
+
     echo -ne "\n\n${blueColour}[+]${grayColour} Press Enter to continue" && read
     tput cnorm
 }
@@ -206,6 +210,44 @@ takeoversubfun() {
     tput cnorm
 
 }
+validate_file() {
+    while [[ ! -f "$1" ]]; do
+        echo -e "${redColour}[!]${grayColour} The file '$1' does not exist. Please enter a valid file."
+        echo -ne "${yellowColour}[?]${grayColour} URL's file: "
+        read urlsfile
+        set -- "$urlsfile"
+    done
+    return 0
+}
+
+nucleiai(){
+
+# Main function to start the interaction
+    main() {
+        tput cnorm
+
+        # Read subdomains file only once
+        if [[ -z "$urlfile" ]]; then
+            echo -ne "\n${yellowColour}[?]${grayColour} URL's file: "
+            read urlfile
+
+            # Validate subdomains file
+            validate_file "$urlfile"
+        fi
+
+        # Read prompt
+        echo -ne "\n${blueColour}[?]${grayColour} Prompt: "
+        read prompt
+
+        # Run Nuclei with the provided options
+        nuclei -l "$urlfile" -ai "$prompt"
+
+        # Call main again to continue execution
+        main
+    }
+
+    main 
+}
 
 menu() {
     tput cnorm; clear
@@ -219,6 +261,7 @@ menu() {
     echo -e "${yellowColour}[2]${grayColour} Scan subdomains"
     echo -e "${yellowColour}[3]${grayColour} Scan URL Wayback Machine"
     echo -e "${yellowColour}[4]${grayColour} Scan Takeovers"
+    echo -e "${yellowColour}[5]${grayColour} Shell Nuclei AI"
     echo -e "\n${redColour}[99]${grayColour} Exit"
     echo -ne "\n${blueColour}[?]${grayColour} Attack: " && read option
 
@@ -226,7 +269,8 @@ menu() {
         1) run_vuln_scan ;;
         2) subfinderfun ;;
         3) fetch_wayback_urls ;;
-        4) takeoversubfun ;; 
+        4) takeoversubfun ;;
+        5) nucleiai ;;
         99) ctrl_c ;;
         *) echo -e "${redColour}Invalid option, try again.${endColour}" ;;
     esac
@@ -247,7 +291,7 @@ else
     echo -ne " / /_/ / | | | '_ \\| __/ _ \\ '__|\n"
     echo -ne "/ __  /| |_| | | | | ||  __/ |   \n"
     echo -ne "\\/ /_/  \\__,_|_| |_|\\__\\___|_|   \n"
-    echo -e "\n${greenColour}[+]${grayColour} Version 1"
+    echo -e "\n${greenColour}[+]${grayColour} Version 1.2"
     echo -e "${greenColour}[+]${grayColour} Github: https://github.com/Kidd3n"
     echo -e "${greenColour}[+]${grayColour} Discord ID: kidd3n.sh"
     echo -ne "\n${greenColour}[+]${grayColour} Press Enter to continue" && read
