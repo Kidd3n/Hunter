@@ -68,7 +68,7 @@ programs() {
         mv ${pathmain}/Gf-Patterns/*.json ~/.gf 2>/dev/null
         rm -rf Gf-Patterns 2>/dev/null
     fi
-    
+
     clear 
 }
 
@@ -152,7 +152,7 @@ run_vuln_scan() {
         [[ ! -s "$file" ]] && rm "$file"
     done
 
-    echo -ne "\n${redColour}[!]${grayColour} Filtered URLs have been saved to the respective output files in '$output_dir':\n"
+    echo -ne "\n${yellowColour}[!]${grayColour} Filtered URLs have been saved to the respective output files in '$output_dir':\n"
 
     if [[ -s "$xss_file" || -s "$or_file" || -s "$lfi_file" || -s "$sqli_file" ]]; then
         [[ -s "$xss_file" ]] && echo -ne "\n${greenColour}[+]${grayColour}  XSS: $xss_file"
@@ -233,28 +233,32 @@ validate_file() {
 }
 
 nucleiai(){
+    tput cnorm
 
-# Main function to start the interaction
+    if ls ${pathmain}/apikey.txt &>/dev/null; then
+        nuclei -auth "$(cat ${pathmain}/apikey.txt)"
+    else
+        echo -ne "\n${grayColour}[!]${grayColour} https://cloud.projectdiscovery.io/ "
+        echo -ne "\n${blueColour}[?]${grayColour} Nuclei API key: " && read apikey
+        nuclei -auth $apikey
+        echo "$apikey" > "${pathmain}/apikey.txt"
+    fi
+
     main() {
         tput cnorm
-        
-        # Read subdomains file only once
+    
         if [[ -z "$urlfile" ]]; then
             echo -ne "\n${yellowColour}[?]${grayColour} URL's file: "
             read urlfile
 
-            # Validate subdomains file
+            
             validate_file "$urlfile"
         fi
 
-        # Read prompt
         echo -ne "\n${blueColour}[?]${grayColour} Prompt: "
         read prompt
 
-        # Run Nuclei with the provided options
         nuclei -l "$urlfile" -ai "$prompt"
-
-        # Call main again to continue execution
         main
     }
 
