@@ -59,10 +59,16 @@ programs() {
         fi
     done
 
-    echo -e "${blueColour}[*]${grayColour} Installing gf patterns..."
-    git clone https://github.com/1ndianl33t/Gf-Patterns 2>/dev/null
-    mv ${pathmain}/Gf-Patterns/*.json ~/.gf 2>/dev/null
-    rm -rf Gf-Patterns 2>/dev/null
+    if ls ~/.gf/*.json &>/dev/null; then
+        echo -e "${greenColour}[+]${grayColour} gf patterns is already installed."
+        sleep 0.1
+    else    
+        echo -e "${blueColour}[*]${grayColour} Installing gf patterns..."
+        git clone https://github.com/1ndianl33t/Gf-Patterns 2>/dev/null
+        mv ${pathmain}/Gf-Patterns/*.json ~/.gf 2>/dev/null
+        rm -rf Gf-Patterns 2>/dev/null
+    fi
+    
     clear 
 }
 
