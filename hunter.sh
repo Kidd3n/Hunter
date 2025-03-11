@@ -33,7 +33,7 @@ programs() {
         echo -e "${greenColour}[+]${grayColour} Go is already installed."
         sleep 0.1
     fi
-    
+
     dependencies=(katana uro Gxss kxss gf anew httpx subfinder httpx-toolkit nuclei subzy)
 
     for program in "${dependencies[@]}"; do
@@ -58,8 +58,12 @@ programs() {
             sleep 0.1
         fi
     done
-    
-    clear
+
+    echo -e "${blueColour}[*]${grayColour} Installing gf patterns..."
+    git clone https://github.com/1ndianl33t/Gf-Patterns 2>/dev/null
+    mv ${pathmain}/Gf-Patterns/*.json ~/.gf 2>/dev/null
+    rm -rf Gf-Patterns 2>/dev/null
+    clear 
 }
 
 # Function to fetch URLs from Wayback Machine
@@ -118,23 +122,25 @@ run_vuln_scan() {
         echo -e "\n${redColour}[!]${grayColour} No URLs were collected. Exiting..."
     fi
 
-    echo -e "\n${greenColour}[!]${grayColour} Filtering URLs for potential XSS endpoints..."; sleep 1
+    # SQLi
+    echo -e "\n${greenColour}[!]${grayColour} Filtering URLs for potential SQLi endpoints..."; sleep 1
+    sqli_file="$output_dir/sqli_output.txt"
+    cat "$output_dir/output.txt" | gf sqli | sed 's/=.*/=/' | sort -u > "$sqli_file"
 
     # XSS
+    echo -e "\n${greenColour}[!]${grayColour} Filtering URLs for potential XSS endpoints..."; sleep 1
     xss_file="$output_dir/xss_output.txt"
     cat "$output_dir/output.txt" | Gxss | kxss | grep -oP '^URL: \K\S+' | sed 's/=.*/=/' | sort -u > "$xss_file"
-
-    # Open Redirect
-    or_file="$output_dir/open_redirect_output.txt"
-    cat "$output_dir/output.txt" | gf or | sed 's/=.*/=/' | sort -u > "$or_file"
-
+    
     # LFI
+    echo -e "\n${greenColour}[!]${grayColour} Filtering URLs for potential LFI endpoints..."; sleep 1
     lfi_file="$output_dir/lfi_output.txt"
     cat "$output_dir/output.txt" | gf lfi | sed 's/=.*/=/' | sort -u > "$lfi_file"
 
-    # SQLi
-    sqli_file="$output_dir/sqli_output.txt"
-    cat "$output_dir/output.txt" | gf sqli | sed 's/=.*/=/' | sort -u > "$sqli_file"
+    # Open Redirect
+    echo -e "\n${greenColour}[!]${grayColour} Filtering URLs for potential OR endpoints..."; sleep 1
+    or_file="$output_dir/open_redirect_output.txt"
+    cat "$output_dir/output.txt" | gf or | sed 's/=.*/=/' | sort -u > "$or_file"
 
     for file in "$xss_file" "$or_file" "$lfi_file" "$sqli_file"; do
         [[ ! -s "$file" ]] && rm "$file"
@@ -225,7 +231,7 @@ nucleiai(){
 # Main function to start the interaction
     main() {
         tput cnorm
-
+        
         # Read subdomains file only once
         if [[ -z "$urlfile" ]]; then
             echo -ne "\n${yellowColour}[?]${grayColour} URL's file: "
