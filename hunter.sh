@@ -131,28 +131,28 @@ run_vuln_scan() {
     # SQLi
     echo -e "\n${greenColour}[!]${grayColour} Filtering URLs for potential SQLi endpoints..."; sleep 1
     sqli_file="$output_dir/sqli_output.txt"
-    cat "$output_dir/output.txt" | gf sqli | sed 's/=.*/=/' | sort -u > "$sqli_file"
+    cat "$output_dir/output.txt" | gf sqli | sed 's/=.*/=/' 
 
     # XSS
     echo -e "\n${greenColour}[!]${grayColour} Filtering URLs for potential XSS endpoints..."; sleep 1
     xss_file="$output_dir/xss_output.txt"
-    cat "$output_dir/output.txt" | Gxss | kxss | grep -oP '^URL: \K\S+' | sed 's/=.*/=/' | sort -u > "$xss_file"
+    cat "$output_dir/output.txt" | Gxss | kxss | grep -oP '^URL: \K\S+' | sed 's/=.*/=/'
     
     # LFI
     echo -e "\n${greenColour}[!]${grayColour} Filtering URLs for potential LFI endpoints..."; sleep 1
     lfi_file="$output_dir/lfi_output.txt"
-    cat "$output_dir/output.txt" | gf lfi | sed 's/=.*/=/' | sort -u > "$lfi_file"
+    cat "$output_dir/output.txt" | gf lfi | sed 's/=.*/=/'
 
     # Open Redirect
     echo -e "\n${greenColour}[!]${grayColour} Filtering URLs for potential OR endpoints..."; sleep 1
     or_file="$output_dir/open_redirect_output.txt"
-    cat "$output_dir/output.txt" | gf or | sed 's/=.*/=/' | sort -u > "$or_file"
+    cat "$output_dir/output.txt" | gf or | sed 's/=.*/=/'
 
     for file in "$xss_file" "$or_file" "$lfi_file" "$sqli_file"; do
         [[ ! -s "$file" ]] && rm "$file"
     done
 
-    echo -ne "\n${yellowColour}[!]${grayColour} Filtered URLs have been saved to the respective output files in '$output_dir':\n"
+    echo -ne "\n\n${yellowColour}[!]${grayColour} Filtered URLs have been saved to the respective output files in '$output_dir':\n"
 
     if [[ -s "$xss_file" || -s "$or_file" || -s "$lfi_file" || -s "$sqli_file" ]]; then
         [[ -s "$xss_file" ]] && echo -ne "\n${greenColour}[+]${grayColour}  XSS: $xss_file"
