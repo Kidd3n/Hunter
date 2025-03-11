@@ -59,7 +59,7 @@ programs() {
         fi
     done
 
-    if ls ~/.gf/*.json &>/dev/null; then
+    if ls ~/.gf/sqli.json &>/dev/null; then
         echo -e "${greenColour}[+]${grayColour} gf patterns is already installed."
         sleep 0.1
     else    
@@ -235,14 +235,7 @@ validate_file() {
 nucleiai(){
     tput cnorm
 
-    if ls ${pathmain}/apikey.txt &>/dev/null; then
-        nuclei -auth "$(cat ${pathmain}/apikey.txt)"
-    else
-        echo -ne "\n${grayColour}[!]${grayColour} https://cloud.projectdiscovery.io/ "
-        echo -ne "\n${blueColour}[?]${grayColour} Nuclei API key: " && read apikey
-        nuclei -auth $apikey
-        echo "$apikey" > "${pathmain}/apikey.txt"
-    fi
+    nuclei -auth
 
     main() {
         tput cnorm
