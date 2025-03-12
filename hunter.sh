@@ -65,7 +65,8 @@ programs() {
     else    
         echo -e "${blueColour}[*]${grayColour} Installing gf patterns..."
         git clone https://github.com/1ndianl33t/Gf-Patterns 2>/dev/null
-        mv ${pathmain}/Gf-Patterns/*.json ~/.gf 2>/dev/null
+        mkdir ~/.gf
+        mv Gf-Patterns/*.json ~/.gf 2>/dev/null
         rm -rf Gf-Patterns 2>/dev/null
     fi
 
@@ -126,6 +127,7 @@ run_vuln_scan() {
     if [[ ! -s "$katana_file" ]]; then
         rm "$katana_file"
         echo -e "\n${redColour}[!]${grayColour} No URLs were collected. Exiting..."
+        sleep 3; menu
     fi
 
     # SQLi
@@ -300,7 +302,7 @@ else
     echo -ne " / /_/ / | | | '_ \\| __/ _ \\ '__|\n"
     echo -ne "/ __  /| |_| | | | | ||  __/ |   \n"
     echo -ne "\\/ /_/  \\__,_|_| |_|\\__\\___|_|   \n"
-    echo -e "\n${greenColour}[+]${grayColour} Version 1.2"
+    echo -e "\n${greenColour}[+]${grayColour} Version 1.3"
     echo -e "${greenColour}[+]${grayColour} Github: https://github.com/Kidd3n"
     echo -e "${greenColour}[+]${grayColour} Discord ID: kidd3n.sh"
     echo -ne "\n${greenColour}[+]${grayColour} Press Enter to continue" && read
