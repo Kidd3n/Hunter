@@ -1,6 +1,8 @@
 #!/bin/bash
 
-# Define colors
+# =============================================
+# Configuración inicial y colores
+# =============================================
 greenColour="\e[0;32m\033[1m"
 endColour="\033[0m\e[0m"
 redColour="\e[0;31m\033[1m"
@@ -9,306 +11,333 @@ yellowColour="\e[0;33m\033[1m"
 purpleColour="\e[0;35m\033[1m"
 turquoiseColour="\e[0;36m\033[1m"
 grayColour="\e[0;37m\033[1m"
-cleancolor="echo -e \"${endColour}\""
 
 trap ctrl_c INT
+pathmain=$(pwd)
 
+# =============================================
+# Funciones base y manejo de errores
+# =============================================
 ctrl_c() {
     echo -e "\n\n${redColour}[!]${endColour}${grayColour} Exit...${endColour}\n"
-    sudo rm -rf output_https:
+    sudo rm -rf output_* subdomains_* 2>/dev/null
     tput cnorm
-    exit
+    exit 1
 }
 
-# Function to check and install Go
-programs() {
-    echo -e "\n${blueColour}[*]${grayColour} Checking dependencies...\n"
-    sleep 0.2
-    
-    # Check and install Go
-    if ! command -v go &> /dev/null; then
-        echo -e "${blueColour}[*]${grayColour} Installing Go..."
-        sudo apt install -y golang-go 2>/dev/null
-    else
-        echo -e "${greenColour}[+]${grayColour} Go is already installed."
-        sleep 0.1
+error_exit() {
+    echo -e "\n${redColour}[!] ERROR: $1${endColour}"
+    echo -e "${blueColour}[*] Solución: $2${endColour}\n"
+    exit 1
+}
+
+validate_dependency() {
+    if ! command -v $1 &>/dev/null; then
+        error_exit "Falta la dependencia crítica: $1" \
+        "Instálela manualmente con: $2"
     fi
+}
 
-    dependencies=(katana uro Gxss kxss gf anew httpx subfinder httpx-toolkit nuclei subzy)
+validate_domain() {
+    [[ ! "$1" =~ ^([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})$ ]] && 
+        error_exit "Dominio inválido: $1" "Use formato: ejemplo.com"
+}
 
-    for program in "${dependencies[@]}"; do
-        if ! command -v $program &> /dev/null; then
-            echo -e "${blueColour}[*]${grayColour} Installing ${program}..."
-            case $program in
-                katana) go install github.com/projectdiscovery/katana/cmd/katana@latest 2>/dev/null; sudo cp ~/go/bin/katana /bin/ ;;
-                uro) pipx install uro --force 2>/dev/null; sudo cp ~/.local/bin/uro /bin/ ;;
-                Gxss) go install github.com/KathanP19/Gxss@latest 2>/dev/null; sudo cp ~/go/bin/Gxss /bin/ ;;
-                kxss) go install github.com/Emoe/kxss@latest 2>/dev/null; sudo cp ~/go/bin/kxss /bin/ ;;
-                gf) go install github.com/tomnomnom/gf@latest 2>/dev/null; sudo cp ~/go/bin/gf /bin/ ;;
-                anew) go install github.com/tomnomnom/anew@latest 2>/dev/null; sudo cp ~/go/bin/anew /bin/ ;;
-                httpx) go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest 2>/dev/null; sudo cp ~/go/bin/httpx /bin/ ;;
-                subfinder) go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest 2>/dev/null; sudo cp ~/go/bin/subfinder /bin/ ;;
-                httpx-toolkit) sudo apt install httpx-toolkit -y ;;
-                nuclei) go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest 2>/dev/null; sudo cp ~/go/bin/nuclei /bin/ ;;
-                subzy) go install -v github.com/PentestPad/subzy@latest 2>/dev/null; sudo cp ~/go/bin/subzy /bin/ ;;
-                *) echo -e "${redColour}[-]${grayColour} Could not install: $program. Try installing manually." ;;
-            esac
-        else
-            echo -e "${greenColour}[+]${grayColour} $program is already installed."
-            sleep 0.1
+# =============================================
+# Soporte Multiplataforma
+# =============================================
+detect_os() {
+    source /etc/os-release 2>/dev/null
+    case $ID in
+        "debian"|"ubuntu"|"kali"|"linuxmint") PKG_MGR="apt -y" ;;
+        "centos"|"fedora") PKG_MGR="yum -y" ;;
+        "arch")            PKG_MGR="pacman -S --noconfirm" ;;
+        *)                 error_exit "Sistema no soportado: $ID" "Use Debian/Ubuntu/CentOS/Arch" ;;
+    esac
+}
+
+install_package() {
+    echo -e "${blueColour}[*] Instalando $1...${endColour}"
+    sudo $PKG_MGR install $1 >/dev/null 2>&1 || 
+        error_exit "Fallo instalando $1" "1. Actualice repos 2. Ejecute manualmente: sudo $PKG_MGR install $1"
+}
+
+# =============================================
+# Actualización Automática (--update)
+# =============================================
+update_tools() {
+    echo -e "\n${greenColour}[*] Actualizando herramientas...${endColour}"
+    
+    declare -A tool_repos=(
+        ["katana"]="projectdiscovery/katana"
+        ["Gxss"]="KathanP19/Gxss"
+        ["kxss"]="Emoe/kxss"
+        ["gf"]="tomnomnom/gf"
+        ["anew"]="tomnomnom/anew"
+        ["httpx"]="projectdiscovery/httpx"
+        ["subfinder"]="projectdiscovery/subfinder"
+        ["nuclei"]="projectdiscovery/nuclei"
+        ["subzy"]="PentestPad/subzy"
+    )
+
+    for tool in "${!tool_repos[@]}"; do
+        echo -e "${blueColour}[*] Actualizando $tool...${endColour}"
+        go install "github.com/${tool_repos[$tool]}@latest" 2>/dev/null || 
+            echo -e "${redColour}[!] Error actualizando $tool${endColour}"
+    done
+    
+    echo -e "${blueColour}[*] Actualizando GF patterns...${endColour}"
+    [ -d ~/.gf ] && git -C ~/.gf pull >/dev/null 2>&1
+    
+    echo -e "${greenColour}[+] Actualización completada!${endColour}"
+    exit 0
+}
+
+# =============================================
+# Paralelización de Tareas
+# =============================================
+install_parallel() {
+    if ! command -v parallel &>/dev/null; then
+        echo -e "${yellowColour}[!] GNU parallel no encontrado, instalando...${endColour}"
+        install_package "parallel"
+    fi
+}
+
+run_parallel() {
+    install_parallel
+    parallel -j $1 "$2"
+}
+
+# =============================================
+# Instalación de Dependencias
+# =============================================
+programs() {
+    echo -e "\n${blueColour}[*] Verificando dependencias...${endColour}"
+    
+    # Instalar paquetes base
+    base_packages=(curl git golang-go pipx)
+    for pkg in "${base_packages[@]}"; do
+        if ! command -v $pkg &>/dev/null; then
+            install_package "$pkg"
         fi
     done
 
-    if ls ~/.gf/sqli.json &>/dev/null; then
-        echo -e "${greenColour}[+]${grayColour} gf patterns is already installed."
-        sleep 0.1
-    else    
-        echo -e "${blueColour}[*]${grayColour} Installing gf patterns..."
-        git clone https://github.com/coffinxp/GFpattren.git 2>/dev/null
-        mkdir ~/.gf
-        mv GFpattern/*.json ~/.gf 2>/dev/null
-        rm -rf GFpattern 2>/dev/null
-    fi
+    # Instalar GNU Parallel
+    install_parallel
 
-    clear 
-}
+    # Instalar herramientas Go
+    declare -A install_commands=(
+        ["katana"]="go install github.com/projectdiscovery/katana/cmd/katana@latest"
+        ["uro"]="pipx install uro --force"
+        ["Gxss"]="go install github.com/KathanP19/Gxss@latest"
+        ["kxss"]="go install github.com/Emoe/kxss@latest"
+        ["gf"]="go install github.com/tomnomnom/gf@latest"
+        ["anew"]="go install github.com/tomnomnom/anew@latest"
+        ["httpx"]="go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest"
+        ["subfinder"]="go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest"
+        ["httpx-toolkit"]="install_package httpx-toolkit"
+        ["nuclei"]="go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest"
+        ["subzy"]="go install -v github.com/PentestPad/subzy@latest"
+    )
 
-# Function to fetch URLs from Wayback Machine
-fetch_wayback_urls() {
-    clear; echo -ne "${purpleColour}[?]${endColour}${grayColour} Enter the domain (e.g., example.com): ${endColour}"
-    read domain
-    clear; tput civis
-    echo -e "\n${blueColour}[*]${grayColour} Fetching all URLs from the Wayback Machine..."
-    curl -G "https://web.archive.org/cdx/search/cdx" \
-      --data-urlencode "url=*.$domain/*" \
-      --data-urlencode "collapse=urlkey" \
-      --data-urlencode "output=text" \
-      --data-urlencode "fl=original" \
-      -o output_${domain}/all_urls.txt
-
-
-    echo -e "\n${blueColour}[*]${grayColour} Fetching URLs with specific file extensions..."
-    curl "https://web.archive.org/cdx/search/cdx?url=*.$domain/*&collapse=urlkey&output=text&fl=original&filter=original:.*\\.(xls|xml|xlsx|json|pdf|sql|doc|docx|pptx|txt|git|zip|tar\\.gz|tgz|bak|7z|rar|log|cache|secret|db|backup|yml|gz|config|csv|yaml|md|md5|exe|dll|bin|ini|bat|sh|tar|deb|rpm|iso|img|env|apk|msi|dmg|tmp|crt|pem|key|pub|asc)$" \
-      -o output_${domain}/filtered_urls.txt
-
-    [[ ! -s output_${domain}/all_urls.txt ]] && rm output/all_urls.txt
-    [[ ! -s output_${domain}/filtered_urls.txt ]] && rm output/filtered_urls.txt
-
-    if [[ -s output_${domain}/all_urls.txt || -s output_${domain}/filtered_urls.txt ]]; then
-        echo -e "\n${greenColour}[*]${grayColour} Results saved to:"
-        [[ -s output_${domain}/all_urls.txt ]] && echo -ne "\n${greenColour}[+]${grayColour}  output_${domain}/all_urls.txt (all URLs)"
-        [[ -s output_${domain}/filtered_urls.txt ]] && echo -ne "\n${greenColour}[+]${grayColour}  output_${domain}/filtered_urls.txt (URLs with specific file extensions)"
-    else
-        echo -e "\n${redColour}[!]${grayColour} No results found. No URLs were extracted."
-        sudo rm -rf output_${domain}
-    fi
-    echo -ne "\n\n${blueColour}[+]${grayColour} Press Enter to continue" && read
-    tput cnorm
-}
-
-# Function to run vulnerability scanning
-run_vuln_scan() {
-    clear; echo -ne "${purpleColour}[?]${grayColour} Enter the website URL or domain: "
-    read website_input
-    output_dir="output_${website_input}"
-    mkdir -p "$output_dir"
-    [[ ! $website_input =~ ^https?:// ]] && website_url="https://$website_input" || website_url="$website_input"
-    clear; tput civis
-    echo -ne "${blueColour}[!]${grayColour} Normalized URL being used: $website_url"
-
-    echo -e "\n\n${blueColour}[*]${grayColour} Running katana with passive sources (waybackarchive, commoncrawl, alienvault)..."
-    echo "$website_url" | katana -ps -pss waybackarchive,commoncrawl,alienvault -f qurl | uro > "$output_dir/output.txt"
-
-    echo -e "${blueColour}[*]${grayColour} Running katana actively with depth 5..."
-    katana -u "$website_url" -d 5 -f qurl | uro | anew "$output_dir/output.txt"
-
-    katana_file="$output_dir/output.txt"
-
-    if [[ ! -s "$katana_file" ]]; then
-        rm "$katana_file"
-        echo -e "\n${redColour}[!]${grayColour} No URLs were collected. Exiting..."
-        sleep 3; menu
-    fi
-
-    # SQLi
-    echo -e "\n${greenColour}[!]${grayColour} Filtering URLs for potential SQLi endpoints...\n"; sleep 1
-    sqli_file="$output_dir/sqli_output.txt"
-    cat "$output_dir/output.txt" | gf sqli | sed 's/=.*/=/' 
-
-    # XSS
-    echo -e "\n${greenColour}[!]${grayColour} Filtering URLs for potential XSS endpoints...\n"; sleep 1
-    xss_file="$output_dir/xss_output.txt"
-    cat "$output_dir/output.txt" | Gxss | kxss | grep -oP '^URL: \K\S+' | sed 's/=.*/=/'
-    
-    # LFI
-    echo -e "\n${greenColour}[!]${grayColour} Filtering URLs for potential LFI endpoints...\n"; sleep 1
-    lfi_file="$output_dir/lfi_output.txt"
-    cat "$output_dir/output.txt" | gf lfi | sed 's/=.*/=/'
-
-    # Open Redirect
-    echo -e "\n${greenColour}[!]${grayColour} Filtering URLs for potential OR endpoints...\n"; sleep 1
-    or_file="$output_dir/open_redirect_output.txt"
-    cat "$output_dir/output.txt" | gf or | sed 's/=.*/=/'
-
-    for file in "$xss_file" "$or_file" "$lfi_file" "$sqli_file"; do
-        [[ ! -s "$file" ]] && rm "$file" 2>/dev/null
+    for tool in "${!install_commands[@]}"; do
+        if ! command -v $tool &>/dev/null; then
+            echo -e "${blueColour}[*] Instalando $tool...${endColour}"
+            eval "${install_commands[$tool]}" >/dev/null 2>&1
+            [ -f $HOME/go/bin/$tool ] && sudo cp $HOME/go/bin/$tool /usr/local/bin/
+        fi
     done
 
-    echo -ne "\n\n${yellowColour}[!]${grayColour} Filtered URLs have been saved to the respective output files in '$output_dir':\n"
-
-    if [[ -s "$xss_file" || -s "$or_file" || -s "$lfi_file" || -s "$sqli_file" ]]; then
-        [[ -s "$xss_file" ]] && echo -ne "\n${greenColour}[+]${grayColour}  XSS: $xss_file"
-        [[ -s "$or_file" ]] && echo -ne "\n${greenColour}[+]${grayColour}  Open Redirect: $or_file"
-        [[ -s "$lfi_file" ]] && echo -ne "\n${greenColour}[+]${grayColour}  LFI: $lfi_file"
-        [[ -s "$sqli_file" ]] && echo -ne "\n${greenColour}[+]${grayColour}  SQLi: $sqli_file"
-    else
-        echo -ne "\n${redColour}[!]${grayColour} No filtered URLs found. No vulnerabilities detected."
+    # Configurar GF patterns
+    if ! ls ~/.gf/*.json &>/dev/null; then
+        echo -e "${blueColour}[*] Instalando GF patterns...${endColour}"
+        git clone https://github.com/coffinxp/GFpattren.git /tmp/GFpattern >/dev/null 2>&1
+        mkdir -p ~/.gf && cp /tmp/GFpattern/*.json ~/.gf/
+        rm -rf /tmp/GFpattern
     fi
 
-    echo -ne "\n\n${blueColour}[+]${grayColour} Press Enter to continue" && read
-    tput cnorm
+    echo -e "\n${greenColour}[+] Dependencias verificadas!${endColour}"
+    sleep 2
+    clear
+}
+
+# =============================================
+# Funciones principales de escaneo
+# =============================================
+fetch_wayback_urls() {
+    clear
+    echo -ne "${purpleColour}[?] Dominio (ej. example.com): ${endColour}"
+    read domain
+    validate_domain "$domain"
+    
+    output_dir="output_${domain}"
+    mkdir -p "$output_dir"
+    
+    echo -e "\n${blueColour}[*] Obteniendo URLs históricas...${endColour}"
+    curl -s "https://web.archive.org/cdx/search/cdx?url=*.$domain/*&collapse=urlkey&output=text&fl=original" \
+        -o "$output_dir/all_urls.txt"
+    
+    echo -e "\n${blueColour}[*] Filtrando URLs con extensiones...${endColour}"
+    curl -s "https://web.archive.org/cdx/search/cdx?url=*.$domain/*&collapse=urlkey&output=text&fl=original&filter=original:.*\\.(xls|xml|xlsx|json|pdf|sql|doc|docx|pptx|txt|git|zip|tar\\.gz|tgz|bak|7z|rar|log|cache|secret|db|backup|yml|gz|config|csv|yaml|md|md5|exe|dll|bin|ini|bat|sh|tar|deb|rpm|iso|img|env|apk|msi|dmg|tmp|crt|pem|key|pub|asc)$" \
+        -o "$output_dir/filtered_urls.txt"
+    
+    echo -e "\n${greenColour}[+] Resultados guardados en:${endColour}"
+    ls -1 $output_dir/*.txt 2>/dev/null || echo -e "${redColour}[!] No se encontraron resultados${endColour}"
+    read -p "Presione Enter para continuar..."
+}
+
+run_vuln_scan() {
+    clear
+    echo -ne "${purpleColour}[?] URL/Dominio a escanear: ${endColour}"
+    read website_input
+    validate_domain "$(echo "$website_input" | awk -F/ '{print $3}')"
+    
+    output_dir="output_${website_input}"
+    mkdir -p "$output_dir"
+    website_url="$( [[ $website_input =~ ^https?:// ]] && echo "$website_input" || echo "https://$website_input" )"
+    
+    echo -e "\n${blueColour}[*] Escaneando con Katana...${endColour}"
+    echo "$website_url" | katana -ps -pss waybackarchive,commoncrawl,alienvault -f qurl | uro > "$output_dir/katana_output.txt"
+    
+    echo -e "\n${blueColour}[*] Buscando vulnerabilidades...${endColour}"
+    declare -A vuln_checks=(
+        ["SQLi"]="gf sqli | sed 's/=.*/=/'"
+        ["XSS"]="Gxss | kxss | grep -oP '^URL: \K\S+' | sed 's/=.*/=/'"
+        ["LFI"]="gf lfi | sed 's/=.*/=/'"
+        ["Open Redirect"]="gf redirect | sed 's/=.*/=/'"
+    )
+    
+    for vuln in "${!vuln_checks[@]}"; do
+        echo -e "\n${yellowColour}[*] Buscando $vuln...${endColour}"
+        cat "$output_dir/katana_output.txt" | eval "${vuln_checks[$vuln]}" > "$output_dir/${vuln// /_}.txt"
+    done
+    
+    echo -e "\n${greenColour}[+] Resultados:${endColour}"
+    ls -1 $output_dir/*.txt 2>/dev/null || echo -e "${redColour}[!] No se encontraron vulnerabilidades${endColour}"
+    read -p "Presione Enter para continuar..."
 }
 
 subfinderfun() {
     clear
-    echo -ne "${purpleColour}[?]${endColour}${grayColour} Enter the domain (e.g., example.com): " && read domainsub
-    clear; tput civis
-    subdir="subdomains_${domainsub}"
-    mkdir -p "$subdir"
-    sleep 1
-
-    echo -ne "\n${blueColour}[*]${grayColour} Finding subdomains in $domainsub..."
-    subfinder -d "$domainsub" -all -recursive > "$subdir/subdomains.txt"
-
-    echo -ne "\n${blueColour}[*]${grayColour} Filtering active subdomains..."
-    cat "$subdir/subdomains.txt" | httpx-toolkit -ports 80,443,8080,8000,8888 -threads 200 > "$subdir/active_subdomains.txt"
-
-    echo -e "\n${redColour}[!]${grayColour} Subdomain results for ${domainsub}:"
-
-    if [[ -s "$subdir/subdomains.txt" ]]; then
-        echo -ne "\n${blueColour}[+]${grayColour}${yellowColour} All${grayColour} subdomains: $subdir/subdomains.txt"
-    else
-        echo -ne "\n${redColour}[!]${grayColour} No subdomains found."
-    fi
-
-    if [[ -s "$subdir/active_subdomains.txt" ]]; then
-        echo -ne "\n${blueColour}[+]${grayColour}${greenColour} Active${grayColour} subdomains: $subdir/active_subdomains.txt"
-    else
-        echo -ne "\n${redColour}[!]${grayColour} No active subdomains found."
-        sudo rm -rf $subdir
-    fi
-    echo -ne "\n\n${blueColour}[+]${grayColour} Press Enter to continue" && read
-    tput cnorm
-}
-
-checktemp() {
-    pathtemp=$(find / -type f -name "detect-all-takeovers.yaml" -print -quit 2>/dev/null)
-    if [[ -n "$pathtemp" ]]; then
-        echo -ne "\n${blueColour}[*]${grayColour} Find takeovers with nuclei..."
-        nuclei -t $pathtemp -l $pathsubact
-        echo -ne "\n\n${blueColour}[+]${grayColour} Press Enter to continue" && read
-        tput cnorm
-    else
-        echo -ne "\n${greenColour}[+]${grayColour} Downloading the nuclei template."
-        wget https://raw.githubusercontent.com/coffinxp/nuclei-templates/refs/heads/main/detect-all-takeovers.yaml 2>/dev/null
-        checktemp
-    fi
+    echo -ne "${purpleColour}[?] Dominio para subdominios (ej. example.com): ${endColour}"
+    read domain
+    validate_domain "$domain"
+    
+    output_dir="subdomains_${domain}"
+    mkdir -p "$output_dir"
+    
+    echo -e "\n${blueColour}[*] Buscando subdominios...${endColour}"
+    subfinder -d "$domain" -all -recursive -silent > "$output_dir/all_subdomains.txt"
+    
+    echo -e "\n${blueColour}[*] Verificando subdominios activos...${endColour}"
+    run_parallel 100 "httpx -silent -status-code" < "$output_dir/all_subdomains.txt" > "$output_dir/active_subdomains.txt"
+    
+    echo -e "\n${greenColour}[+] Resultados guardados en:${endColour}"
+    ls -1 $output_dir/*.txt
+    read -p "Presione Enter para continuar..."
 }
 
 takeoversubfun() {
     clear
-    echo -ne "${purpleColour}[?]${endColour}${grayColour} Enter the path to the file with the active subdomains: " && read pathsubact
-    subzy run --targets $pathsubact --concurrency 100 --hide_fails --verify_ssl 
-    checktemp
-    echo -ne "\n\n${blueColour}[+]${grayColour} Press Enter to continue" && read
-    tput cnorm
-
-}
-validate_file() {
-    while [[ ! -f "$1" ]]; do
-        echo -e "${redColour}[!]${grayColour} The file '$1' does not exist. Please enter a valid file."
-        echo -ne "${yellowColour}[?]${grayColour} URL's file: "
-        read urlsfile
-        set -- "$urlsfile"
-    done
-    return 0
-}
-
-nucleiai(){
-    tput cnorm
-
-    nuclei -auth
-
-    main() {
-        tput cnorm
+    echo -ne "${purpleColour}[?] Ruta de subdominios activos: ${endColour}"
+    read sub_file
+    [ ! -f "$sub_file" ] && error_exit "Archivo no encontrado" "Verifique la ruta"
     
-        if [[ -z "$urlfile" ]]; then
-            echo -ne "\n${yellowColour}[?]${grayColour} URL's file: "
+    echo -e "\n${blueColour}[*] Verificando takeovers...${endColour}"
+    subzy run --targets "$sub_file" --concurrency 50 --hide_fails
+    
+    read -p "Presione Enter para continuar..."
+}
+
+# =============================================
+# Nuclei AI Function
+# =============================================
+nucleiai() {
+    tput cnorm
+    nuclei -auth
+    
+    main_ai() {
+        tput cnorm
+        echo -ne "\n${yellowColour}[?]${grayColour} Archivo de URLs: "
+        read urlfile
+        
+        while [[ ! -f "$urlfile" ]]; do
+            echo -e "${redColour}[!]${grayColour} Archivo no encontrado!"
+            echo -ne "${yellowColour}[?]${grayColour} Archivo de URLs: "
             read urlfile
-
-            
-            validate_file "$urlfile"
-        fi
-
-        echo -ne "\n${blueColour}[?]${grayColour} Prompt: "
+        done
+        
+        echo -ne "${blueColour}[?]${grayColour} Prompt para Nuclei AI: "
         read prompt
-
+        
         nuclei -l "$urlfile" -ai "$prompt"
-        main
+        main_ai
     }
-
-    main 
+    
+    main_ai
 }
 
-menu() {
-    tput cnorm; clear
+# =============================================
+# Banner Inicial
+# =============================================
+show_banner() {
+    tput civis
+    clear
     echo -ne "${redColour}"
     echo -ne "                    _            \n"
     echo -ne "  /\\  /\\_   _ _ __ | |_ ___ _ __ \n"
     echo -ne " / /_/ / | | | '_ \\| __/ _ \\ '__|\n"
     echo -ne "/ __  /| |_| | | | | ||  __/ |   \n"
     echo -ne "\\/ /_/  \\__,_|_| |_|\\__\\___|_|   \n"
-    echo -e "\n\n${yellowColour}[1]${grayColour} Scan endpoints (XSS, SQLI, LFI, OR)"
-    echo -e "${yellowColour}[2]${grayColour} Scan subdomains"
-    echo -e "${yellowColour}[3]${grayColour} Scan URL Wayback Machine"
-    echo -e "${yellowColour}[4]${grayColour} Scan Takeovers"
-    echo -e "${yellowColour}[5]${grayColour} Shell Nuclei AI"
-    echo -e "\n${redColour}[99]${grayColour} Exit"
-    echo -ne "\n${blueColour}[?]${grayColour} Attack: " && read option
-
-    case $option in
-        1) run_vuln_scan ;;
-        2) subfinderfun ;;
-        3) fetch_wayback_urls ;;
-        4) takeoversubfun ;;
-        5) nucleiai ;;
-        99) ctrl_c ;;
-        *) echo -e "${redColour}Invalid option, try again.${endColour}" ;;
-    esac
-}
-
-# Check if the tool was run as root
-if [ $(id -u) -ne 0 ]; then
-    echo -e "${redColour}\n[!]${grayColour} Must be root (sudo $0)\n"
-    $cleancolor
-    exit 1
-# If the tool was run as root, run the update packages, check dependencies and run the main code
-else
-    pathmain=$(pwd)
-    tput civis; clear
-    echo -ne "${redColour}"
-    echo -ne "                    _            \n"
-    echo -ne "  /\\  /\\_   _ _ __ | |_ ___ _ __ \n"
-    echo -ne " / /_/ / | | | '_ \\| __/ _ \\ '__|\n"
-    echo -ne "/ __  /| |_| | | | | ||  __/ |   \n"
-    echo -ne "\\/ /_/  \\__,_|_| |_|\\__\\___|_|   \n"
-    echo -e "\n${greenColour}[+]${grayColour} Version 1.3"
+    echo -e "\n${greenColour}[+]${grayColour} Versión 1.3"
     echo -e "${greenColour}[+]${grayColour} Github: https://github.com/Kidd3n"
     echo -e "${greenColour}[+]${grayColour} Discord ID: kidd3n.sh"
-    echo -ne "\n${greenColour}[+]${grayColour} Press Enter to continue" && read
+    echo -ne "\n${greenColour}[+]${grayColour} Presione Enter para continuar${endColour}" && read
     clear
-    programs
+}
+
+# =============================================
+# Menú Principal
+# =============================================
+menu() {
     while true; do
-        menu
+        clear
+        echo -e "${greenColour}"
+        echo "                    _            "
+        echo "  /\\  /\\_   _ _ __ | |_ ___ _ __ "
+        echo " / /_/ / | | | '_ \\| __/ _ \\ '__|"
+        echo "/ __  /| |_| | | | | ||  __/ |   "
+        echo "\\/ /_/  \\__,_|_| |_|\\__\\___|_|   "
+        echo -e "\n${yellowColour}[1]${grayColour} Escanear endpoints (XSS, SQLi, LFI)"
+        echo -e "${yellowColour}[2]${grayColour} Buscar subdominios"
+        echo -e "${yellowColour}[3]${grayColour} Obtener URLs históricas"
+        echo -e "${yellowColour}[4]${grayColour} Verificar takeovers"
+        echo -e "${yellowColour}[5]${grayColour} Shell Nuclei AI"
+        echo -e "\n${redColour}[99]${grayColour} Salir${endColour}"
+        
+        read -p "Seleccione opción: " option
+        
+        case $option in
+            1) run_vuln_scan ;;
+            2) subfinderfun ;;
+            3) fetch_wayback_urls ;;
+            4) takeoversubfun ;;
+            5) nucleiai ;;
+            99) ctrl_c ;;
+            *) echo -e "${redColour}Opción inválida!${endColour}"; sleep 1 ;;
+        esac
     done
+}
+
+# =============================================
+# Ejecución Principal
+# =============================================
+if [[ $(id -u) -ne 0 ]]; then
+    error_exit "Debe ejecutarse como root" "sudo $0"
 fi
+
+detect_os
+[[ "$1" == "--update" ]] && update_tools
+show_banner
+programs
+menu
