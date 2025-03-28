@@ -85,7 +85,6 @@ gfpinstall() {
         mv GFpattren/*.json ~/.gf 2>/dev/null
         rm -rf GFpattren 2>/dev/null
     fi
-    clear
 }
 # Function to fetch URLs from Wayback Machine
 fetch_wayback_urls() {
