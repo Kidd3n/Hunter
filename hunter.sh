@@ -76,7 +76,7 @@ programs() {
 
 gfpinstall() {
     if ls ~/.gf/sqli.json &>/dev/null; then
-         echo -e "${blueColour}[*]${grayColour}"
+         echo -e "${blueColour}${grayColour}"
     else    
         echo -e "${blueColour}[*]${grayColour} Installing gf patterns..."
         git clone https://github.com/coffinxp/GFpattren.git 2>/dev/null
@@ -133,7 +133,7 @@ scanoutput() {
     gfpinstall
     echo -e "\n${greenColour}[!]${grayColour} Filtering URLs for potential SQLi endpoints...\n"; sleep 1
     sqli_file="$output_dir/sqli_output.txt"
-    cat "$output_dir/output.txt" | gf sqli | sed 's/=.*/=/' 
+    cat "$outfile" | gf sqli | sed 's/=.*/=/' 
 
     # XSS
     echo -e "\n${greenColour}[!]${grayColour} Filtering URLs for potential XSS endpoints...\n"; sleep 1
