@@ -76,7 +76,7 @@ programs() {
 
 gfpinstall() {
     if ls ~/.gf/sqli.json &>/dev/null; then
-
+         echo -e "${blueColour}[*]${grayColour}"
     else    
         echo -e "${blueColour}[*]${grayColour} Installing gf patterns..."
         git clone https://github.com/coffinxp/GFpattren.git 2>/dev/null
