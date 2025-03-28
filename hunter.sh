@@ -119,6 +119,56 @@ fetch_wayback_urls() {
     tput cnorm
 }
 
+scanoutput() {
+    clear; echo -ne "${purpleColour}[?]${grayColour} Enter output file: "
+    read outfile
+
+    if [[ ! -s "$outfile" ]]; then
+        sudo rm "$outfile"
+        echo -e "\n${redColour}[!]${grayColour} No URLs were collected. Exiting..."
+        sleep 3; menu
+    fi
+
+    # SQLi
+    gfpinstall
+    echo -e "\n${greenColour}[!]${grayColour} Filtering URLs for potential SQLi endpoints...\n"; sleep 1
+    sqli_file="$output_dir/sqli_output.txt"
+    cat "$output_dir/output.txt" | gf sqli | sed 's/=.*/=/' 
+
+    # XSS
+    echo -e "\n${greenColour}[!]${grayColour} Filtering URLs for potential XSS endpoints...\n"; sleep 1
+    xss_file="$output_dir/xss_output.txt"
+    cat "$outfile" | Gxss | kxss | grep -oP '^URL: \K\S+' | sed 's/=.*/=/'
+    
+    # LFI
+    echo -e "\n${greenColour}[!]${grayColour} Filtering URLs for potential LFI endpoints...\n"; sleep 1
+    lfi_file="$output_dir/lfi_output.txt"
+    cat "$outfile" | gf lfi | sed 's/=.*/=/'
+
+    # Open Redirect
+    echo -e "\n${greenColour}[!]${grayColour} Filtering URLs for potential OR endpoints...\n"; sleep 1
+    or_file="$output_dir/open_redirect_output.txt"
+    cat "$outfile" | gf or | sed 's/=.*/=/'
+
+    for file in "$xss_file" "$or_file" "$lfi_file" "$sqli_file"; do
+        [[ ! -s "$file" ]] && rm "$file" 2>/dev/null
+    done
+
+    echo -ne "\n\n${yellowColour}[!]${grayColour} Filtered URLs have been saved to the respective output files in '$output_dir':\n"
+
+    if [[ -s "$xss_file" || -s "$or_file" || -s "$lfi_file" || -s "$sqli_file" ]]; then
+        [[ -s "$xss_file" ]] && echo -ne "\n${greenColour}[+]${grayColour}  XSS: $xss_file"
+        [[ -s "$or_file" ]] && echo -ne "\n${greenColour}[+]${grayColour}  Open Redirect: $or_file"
+        [[ -s "$lfi_file" ]] && echo -ne "\n${greenColour}[+]${grayColour}  LFI: $lfi_file"
+        [[ -s "$sqli_file" ]] && echo -ne "\n${greenColour}[+]${grayColour}  SQLi: $sqli_file"
+    else
+        echo -ne "\n${redColour}[!]${grayColour} No filtered URLs found. No vulnerabilities detected."
+    fi
+
+    echo -ne "\n\n${blueColour}[+]${grayColour} Press Enter to continue" && read
+    tput cnorm
+}
+
 # Function to run vulnerability scanning
 run_vuln_scan() {
     clear; echo -ne "${purpleColour}[?]${grayColour} Enter the website URL or domain: "
@@ -138,7 +188,7 @@ run_vuln_scan() {
     katana_file="$output_dir/output.txt"
 
     if [[ ! -s "$katana_file" ]]; then
-        rm "$katana_file"
+        sudo rm "$katana_file"
         echo -e "\n${redColour}[!]${grayColour} No URLs were collected. Exiting..."
         sleep 3; menu
     fi
@@ -287,6 +337,7 @@ menu() {
     echo -e "${yellowColour}[3]${grayColour} Scan URL Wayback Machine"
     echo -e "${yellowColour}[4]${grayColour} Scan Takeovers"
     echo -e "${yellowColour}[5]${grayColour} Shell Nuclei AI"
+    echo -e "${yellowColour}[6]${grayColour} Scan of urls file"
     echo -e "\n${redColour}[99]${grayColour} Exit"
     echo -ne "\n${blueColour}[?]${grayColour} Attack: " && read option
 
@@ -296,6 +347,7 @@ menu() {
         3) fetch_wayback_urls ;;
         4) takeoversubfun ;;
         5) nucleiai ;;
+        6) scanoutput ;;
         99) ctrl_c ;;
         *) echo -e "${redColour}Invalid option, try again.${endColour}" ;;
     esac
@@ -316,7 +368,7 @@ else
     echo -ne " / /_/ / | | | '_ \\| __/ _ \\ '__|\n"
     echo -ne "/ __  /| |_| | | | | ||  __/ |   \n"
     echo -ne "\\/ /_/  \\__,_|_| |_|\\__\\___|_|   \n"
-    echo -e "\n${greenColour}[+]${grayColour} Version 1.3"
+    echo -e "\n${greenColour}[+]${grayColour} Version 1.4"
     echo -e "${greenColour}[+]${grayColour} Github: https://github.com/Kidd3n"
     echo -e "${greenColour}[+]${grayColour} Discord ID: kidd3n.sh"
     echo -ne "\n${greenColour}[+]${grayColour} Press Enter to continue" && read
