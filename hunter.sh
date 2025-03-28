@@ -66,8 +66,8 @@ programs() {
         echo -e "${blueColour}[*]${grayColour} Installing gf patterns..."
         git clone https://github.com/coffinxp/GFpattren.git 2>/dev/null
         mkdir ~/.gf
-        mv GFpattern/*.json ~/.gf 2>/dev/null
-        rm -rf GFpattern 2>/dev/null
+        mv GFpattren/*.json ~/.gf 2>/dev/null
+        rm -rf GFpattren 2>/dev/null
     fi
 
     clear 
