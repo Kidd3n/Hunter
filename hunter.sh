@@ -74,6 +74,19 @@ programs() {
     clear 
 }
 
+gfpinstall() {
+    if ls ~/.gf/sqli.json &>/dev/null; then
+
+    else    
+        echo -e "${blueColour}[*]${grayColour} Installing gf patterns..."
+        git clone https://github.com/coffinxp/GFpattren.git 2>/dev/null
+        sleep 3
+        mkdir ~/.gf
+        mv GFpattren/*.json ~/.gf 2>/dev/null
+        rm -rf GFpattren 2>/dev/null
+    fi
+    clear
+}
 # Function to fetch URLs from Wayback Machine
 fetch_wayback_urls() {
     clear; echo -ne "${purpleColour}[?]${endColour}${grayColour} Enter the domain (e.g., example.com): ${endColour}"
@@ -132,6 +145,7 @@ run_vuln_scan() {
     fi
 
     # SQLi
+    gfpinstall
     echo -e "\n${greenColour}[!]${grayColour} Filtering URLs for potential SQLi endpoints...\n"; sleep 1
     sqli_file="$output_dir/sqli_output.txt"
     cat "$output_dir/output.txt" | gf sqli | sed 's/=.*/=/' 
