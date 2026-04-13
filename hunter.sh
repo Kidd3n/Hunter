@@ -133,22 +133,22 @@ scanoutput() {
     gfpinstall
     echo -e "\n${greenColour}[!]${grayColour} Filtering URLs for potential SQLi endpoints...\n"; sleep 1
     sqli_file="$output_dir/sqli_output.txt"
-    cat "$outfile" | gf sqli | sed 's/=.*/=/' 
+    cat "$outfile" | gf sqli | sed 's/=.*/=/' | anew "$sqli_file"
 
     # XSS
     echo -e "\n${greenColour}[!]${grayColour} Filtering URLs for potential XSS endpoints...\n"; sleep 1
     xss_file="$output_dir/xss_output.txt"
-    cat "$outfile" | Gxss | kxss | grep -oP '^URL: \K\S+' | sed 's/=.*/=/'
+    cat "$outfile" | Gxss | kxss | grep -oP '^URL: \K\S+' | sed 's/=.*/=/' | anew "$xss_file"
     
     # LFI
     echo -e "\n${greenColour}[!]${grayColour} Filtering URLs for potential LFI endpoints...\n"; sleep 1
     lfi_file="$output_dir/lfi_output.txt"
-    cat "$outfile" | gf lfi | sed 's/=.*/=/'
+    cat "$outfile" | gf lfi | sed 's/=.*/=/' | anew "$lfi_file"
 
     # Open Redirect
     echo -e "\n${greenColour}[!]${grayColour} Filtering URLs for potential OR endpoints...\n"; sleep 1
     or_file="$output_dir/open_redirect_output.txt"
-    cat "$outfile" | gf or | sed 's/=.*/=/'
+    cat "$outfile" | gf or | sed 's/=.*/=/' | anew "$or_file"
 
     for file in "$xss_file" "$or_file" "$lfi_file" "$sqli_file"; do
         [[ ! -s "$file" ]] && rm "$file" 2>/dev/null
@@ -197,22 +197,22 @@ run_vuln_scan() {
     gfpinstall
     echo -e "\n${greenColour}[!]${grayColour} Filtering URLs for potential SQLi endpoints...\n"; sleep 1
     sqli_file="$output_dir/sqli_output.txt"
-    cat "$output_dir/output.txt" | gf sqli | sed 's/=.*/=/' 
+    cat "$output_dir/output.txt" | gf sqli | sed 's/=.*/=/' | anew "$sqli_file"
 
     # XSS
     echo -e "\n${greenColour}[!]${grayColour} Filtering URLs for potential XSS endpoints...\n"; sleep 1
     xss_file="$output_dir/xss_output.txt"
-    cat "$output_dir/output.txt" | Gxss | kxss | grep -oP '^URL: \K\S+' | sed 's/=.*/=/'
+    cat "$output_dir/output.txt" | Gxss | kxss | grep -oP '^URL: \K\S+' | sed 's/=.*/=/' | anew "$xss_file"
     
     # LFI
     echo -e "\n${greenColour}[!]${grayColour} Filtering URLs for potential LFI endpoints...\n"; sleep 1
     lfi_file="$output_dir/lfi_output.txt"
-    cat "$output_dir/output.txt" | gf lfi | sed 's/=.*/=/'
+    cat "$output_dir/output.txt" | gf lfi | sed 's/=.*/=/' | anew "$lfi_file"
 
     # Open Redirect
     echo -e "\n${greenColour}[!]${grayColour} Filtering URLs for potential OR endpoints...\n"; sleep 1
     or_file="$output_dir/open_redirect_output.txt"
-    cat "$output_dir/output.txt" | gf or | sed 's/=.*/=/'
+    cat "$output_dir/output.txt" | gf or | sed 's/=.*/=/' | anew "$or_file"
 
     for file in "$xss_file" "$or_file" "$lfi_file" "$sqli_file"; do
         [[ ! -s "$file" ]] && rm "$file" 2>/dev/null
