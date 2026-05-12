@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# ============================================================
+#  Hunter v3 - Bug Bounty Recon & Vulnerability Scanner
+#  Github: https://github.com/Kidd3n
+#  Discord: kidd3n.sh
+# ============================================================
+
 # Colors
 greenColour="\e[0;32m\033[1m"
 endColour="\033[0m\e[0m"
@@ -616,6 +622,20 @@ xss_deep_scan() {
     ask "Enable deep DOM XSS — slow but thorough [y/N]: "; read use_deep
     echo ""
     tput civis
+
+    # Build dalfox command
+    # Core bug bounty flags:
+    #   --waf-evasion      → auto-detects WAF and adjusts speed/payloads to evade it
+    #   --deep-domxss      → headless browser DOM testing with extended payload set
+    #   --follow-redirects → follow 301/302 so redirected params are tested
+    #   --mining-dom       → mine parameters from DOM (finds hidden params in JS)
+    #   --mining-dict      → bruteforce hidden params with a built-in wordlist
+    #   --remote-payloads  → pull fresh payloads from portswigger and payloadbox
+    #   --custom-alert-value document.cookie → PoC shows cookie exfil (better for reports)
+    #   --format json      → structured output for easier parsing/reporting
+    #   --worker 20        → 20 concurrent workers, good balance speed vs stealth
+    #   --timeout 30       → 30s per request before giving up
+    #   --delay 300        → 300ms between requests to same host, avoids rate limiting
 
     local dalfox_cmd=(
         dalfox file "$xss_raw"
